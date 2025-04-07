@@ -1,0 +1,305 @@
+{% extends "layout.html" %}
+
+{% block title %}My Profile - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-circle me-2"></i>My Profile</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('patient.profile') }}" class="needs-validation" novalidate>
+                        <div class="row">
+                            <!-- Personal Information -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Personal Information</h5>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3 mb-md-0">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ current_user.first_name or '' }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ current_user.last_name or '' }}" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" value="{{ current_user.email }}" disabled>
+                                    <div class="form-text">Email cannot be changed. Contact support if needed.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                    <input type="date" class="form-control datepicker" id="date_of_birth" name="date_of_birth" value="{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" name="gender">
+                                        <option value="" {% if not patient.gender %}selected{% endif %}>Prefer not to say</option>
+                                        <option value="male" {% if patient.gender == 'male' %}selected{% endif %}>Male</option>
+                                        <option value="female" {% if patient.gender == 'female' %}selected{% endif %}>Female</option>
+                                        <option value="other" {% if patient.gender == 'other' %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Contact & Medical Information -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Contact & Medical Information</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="contact_number" class="form-label">Contact Number</label>
+                                    <input type="tel" class="form-control" id="contact_number" name="contact_number" value="{{ patient.contact_number or '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="emergency_contact" class="form-label">Emergency Contact</label>
+                                    <input type="tel" class="form-control" id="emergency_contact" name="emergency_contact" value="{{ patient.emergency_contact or '' }}">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="2">{{ patient.address or '' }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="preferred_language" class="form-label">Preferred Language</label>
+                                    <select class="form-select" id="preferred_language" name="preferred_language">
+                                        <option value="English" {% if patient.preferred_language == 'English' %}selected{% endif %}>English</option>
+                                        <option value="Spanish" {% if patient.preferred_language == 'Spanish' %}selected{% endif %}>Spanish</option>
+                                        <option value="French" {% if patient.preferred_language == 'French' %}selected{% endif %}>French</option>
+                                        <option value="German" {% if patient.preferred_language == 'German' %}selected{% endif %}>German</option>
+                                        <option value="Mandarin" {% if patient.preferred_language == 'Mandarin' %}selected{% endif %}>Mandarin</option>
+                                        <option value="Hindi" {% if patient.preferred_language == 'Hindi' %}selected{% endif %}>Hindi</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="diagnosis" class="form-label">Primary Diagnosis</label>
+                                    <select class="form-select" id="diagnosis" name="diagnosis">
+                                        <option value="" {% if not patient.diagnosis %}selected{% endif %}>None</option>
+                                        <option value="Type 1 Diabetes" {% if patient.diagnosis == 'Type 1 Diabetes' %}selected{% endif %}>Type 1 Diabetes</option>
+                                        <option value="Type 2 Diabetes" {% if patient.diagnosis == 'Type 2 Diabetes' %}selected{% endif %}>Type 2 Diabetes</option>
+                                        <option value="Gestational Diabetes" {% if patient.diagnosis == 'Gestational Diabetes' %}selected{% endif %}>Gestational Diabetes</option>
+                                        <option value="Prediabetes" {% if patient.diagnosis == 'Prediabetes' %}selected{% endif %}>Prediabetes</option>
+                                        <option value="Hypertension" {% if patient.diagnosis == 'Hypertension' %}selected{% endif %}>Hypertension</option>
+                                        <option value="Coronary Artery Disease" {% if patient.diagnosis == 'Coronary Artery Disease' %}selected{% endif %}>Coronary Artery Disease</option>
+                                        <option value="Heart Failure" {% if patient.diagnosis == 'Heart Failure' %}selected{% endif %}>Heart Failure</option>
+                                        <option value="Other" {% if patient.diagnosis and patient.diagnosis not in ['Type 1 Diabetes', 'Type 2 Diabetes', 'Gestational Diabetes', 'Prediabetes', 'Hypertension', 'Coronary Artery Disease', 'Heart Failure'] %}selected{% endif %}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Security Settings -->
+                        <h5 class="mb-3">Security Settings</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-lock me-2"></i>Change Password</h6>
+                                        <p class="card-text">Secure your account with a strong password.</p>
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                            Change Password
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title"><i class="fas fa-bell me-2"></i>Notification Settings</h6>
+                                        <p class="card-text">Manage how and when you receive alerts.</p>
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#notificationSettingsModal">
+                                            Configure Notifications
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="reset" class="btn btn-outline-secondary me-md-2">Reset Changes</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Save Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Data Export & Privacy Options -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Data Privacy & Export</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h6><i class="fas fa-download me-2"></i>Export Your Data</h6>
+                            <p class="text-muted">Download a copy of all your health data in various formats.</p>
+                            <div class="d-grid gap-2 d-md-block">
+                                <button class="btn btn-outline-primary btn-sm me-2">
+                                    <i class="fas fa-file-csv me-2"></i>CSV
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm me-2">
+                                    <i class="fas fa-file-pdf me-2"></i>PDF
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-file-code me-2"></i>JSON
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-key me-2"></i>Privacy Options</h6>
+                            <p class="text-muted">Manage how your data is stored and shared.</p>
+                            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#privacySettingsModal">
+                                <i class="fas fa-sliders-h me-2"></i>Privacy Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" minlength="8" required>
+                        <div class="form-text">Password must be at least 8 characters long.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="confirmNewPassword" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="changePasswordForm" class="btn btn-primary">Change Password</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Settings Modal -->
+<div class="modal fade" id="notificationSettingsModal" tabindex="-1" aria-labelledby="notificationSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="notificationSettingsModalLabel">Notification Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="notificationSettingsForm">
+                    <h6>Notification Methods</h6>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="emailNotifications" checked>
+                        <label class="form-check-label" for="emailNotifications">Email Notifications</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="smsNotifications" checked>
+                        <label class="form-check-label" for="smsNotifications">SMS Notifications</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="pushNotifications" checked>
+                        <label class="form-check-label" for="pushNotifications">Push Notifications</label>
+                    </div>
+                    
+                    <h6 class="mt-4">Notification Types</h6>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="abnormalReadings" checked>
+                        <label class="form-check-label" for="abnormalReadings">Abnormal Reading Alerts</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="medicationReminders" checked>
+                        <label class="form-check-label" for="medicationReminders">Medication Reminders</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="appointmentReminders" checked>
+                        <label class="form-check-label" for="appointmentReminders">Appointment Reminders</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="deviceSync" checked>
+                        <label class="form-check-label" for="deviceSync">Device Sync Reminders</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="notificationSettingsForm" class="btn btn-primary">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Settings Modal -->
+<div class="modal fade" id="privacySettingsModal" tabindex="-1" aria-labelledby="privacySettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="privacySettingsModalLabel">Privacy Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="privacySettingsForm">
+                    <h6>Data Sharing</h6>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="shareWithProviders" checked>
+                        <label class="form-check-label" for="shareWithProviders">Share with my healthcare providers</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="shareWithResearchers">
+                        <label class="form-check-label" for="shareWithResearchers">Share anonymized data for research</label>
+                        <div class="form-text">Your personal information will be removed before sharing.</div>
+                    </div>
+                    
+                    <h6 class="mt-4">Data Retention</h6>
+                    <div class="mb-3">
+                        <label for="dataRetentionPeriod" class="form-label">Keep my data for</label>
+                        <select class="form-select" id="dataRetentionPeriod">
+                            <option value="indefinite" selected>Indefinitely</option>
+                            <option value="5years">5 years after last activity</option>
+                            <option value="1year">1 year after last activity</option>
+                            <option value="90days">90 days after last activity</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-warning mt-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Data Deletion:</strong> If you wish to delete your account and all associated data, please contact our support team.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="privacySettingsForm" class="btn btn-primary">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

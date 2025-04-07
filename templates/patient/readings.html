@@ -1,0 +1,665 @@
+{% extends "layout.html" %}
+
+{% block title %}Health Readings - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-chart-bar me-2"></i>Health Readings</h1>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReadingModal">
+                <i class="fas fa-plus me-2"></i>Add Manual Reading
+            </button>
+            <a href="{{ url_for('patient.sync_devices') }}" method="post" class="btn btn-outline-primary">
+                <i class="fas fa-sync me-2"></i>Sync Devices
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="readingsFilterForm" method="GET" action="{{ url_for('patient.readings') }}" class="row g-3">
+                <div class="col-md-5">
+                    <label for="type" class="form-label">Reading Type</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="all" {% if reading_type == 'all' %}selected{% endif %}>All Readings</option>
+                        <option value="blood_glucose" {% if reading_type == 'blood_glucose' %}selected{% endif %}>Blood Glucose</option>
+                        <option value="blood_pressure" {% if reading_type == 'blood_pressure' %}selected{% endif %}>Blood Pressure</option>
+                        <option value="weight" {% if reading_type == 'weight' %}selected{% endif %}>Weight</option>
+                        <option value="activity" {% if reading_type == 'activity' %}selected{% endif %}>Activity</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label for="days" class="form-label">Time Period</label>
+                    <select class="form-select" id="days" name="days">
+                        <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                        <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                        <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+                        <option value="180" {% if days == 180 %}selected{% endif %}>Last 6 months</option>
+                        <option value="365" {% if days == 365 %}selected{% endif %}>Last year</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i>Apply
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Trends</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-4">
+                            <h6>Average</h6>
+                            <h2 id="avgReading">-</h2>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <h6>Readings</h6>
+                            <h2 id="readingCount">{{ readings|length }}</h2>
+                        </div>
+                        <div class="col-6">
+                            <h6>Abnormal</h6>
+                            <h2 id="abnormalCount">-</h2>
+                        </div>
+                        <div class="col-6">
+                            <h6>Last Reading</h6>
+                            <h2 id="lastReading">-</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Readings Table -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Reading History</h5>
+        </div>
+        <div class="card-body">
+            {% if readings %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="readingsTable">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Type</th>
+                                <th>Value</th>
+                                <th>Source</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reading in readings %}
+                                <tr class="{% if reading.is_abnormal %}reading-abnormal{% else %}reading-normal{% endif %}">
+                                    <td>{{ reading.timestamp.strftime('%b %d, %Y %H:%M') }}</td>
+                                    <td>{{ reading.reading_type|replace('_', ' ')|title }}</td>
+                                    <td>
+                                        {% if reading.reading_type == 'blood_pressure' and reading.value_systolic and reading.value_diastolic %}
+                                            {{ reading.value_systolic }}/{{ reading.value_diastolic }} {{ reading.unit }}
+                                            {% if reading.value_pulse %}<br><small>Pulse: {{ reading.value_pulse }} bpm</small>{% endif %}
+                                        {% else %}
+                                            {{ reading.value }} {{ reading.unit }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reading.device %}
+                                            <span data-bs-toggle="tooltip" title="{{ reading.device.manufacturer }} {{ reading.device.model }}">
+                                                {{ reading.device.device_type|replace('_', ' ')|title }}
+                                            </span>
+                                        {% else %}
+                                            Manual Entry
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if reading.is_abnormal %}
+                                            <span class="badge bg-danger">Abnormal</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Normal</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#readingDetailModal" data-reading-id="{{ reading.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination Controls -->
+                {% if readings|length > 20 %}
+                    <nav aria-label="Reading history pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                {% endif %}
+                
+                <!-- Export Options -->
+                <div class="mt-4 text-center">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                        <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print</a></li>
+                        </ul>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-medical-alt fa-4x mb-3 text-muted"></i>
+                    <h4>No readings found</h4>
+                    <p class="text-muted">No health readings matching your filter criteria.</p>
+                    <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addReadingModal">
+                        <i class="fas fa-plus me-2"></i>Add Manual Reading
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Measurement Information -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Measurement Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h6><i class="fas fa-tint me-2 text-danger"></i>Blood Glucose</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>Normal range:</strong> 70-130 mg/dL (before meals)</li>
+                        <li><strong>Normal range:</strong> Below 180 mg/dL (after meals)</li>
+                        <li><strong>Best time to check:</strong> Before meals, 2 hours after meals, before bed</li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6><i class="fas fa-heartbeat me-2 text-warning"></i>Blood Pressure</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>Normal range:</strong> Below 120/80 mmHg</li>
+                        <li><strong>Elevated:</strong> 120-129/<70 mmHg</li>
+                        <li><strong>Hypertension Stage 1:</strong> 130-139/80-89 mmHg</li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6><i class="fas fa-weight me-2 text-info"></i>Weight Management</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>Best time to weigh:</strong> Morning, after using bathroom</li>
+                        <li><strong>Consistency:</strong> Same time, same clothing</li>
+                        <li><strong>Frequency:</strong> Once daily or weekly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Reading Modal -->
+<div class="modal fade" id="addReadingModal" tabindex="-1" aria-labelledby="addReadingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addReadingModalLabel"><i class="fas fa-plus me-2"></i>Add Manual Reading</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addReadingForm">
+                    <div class="mb-3">
+                        <label for="readingType" class="form-label">Reading Type</label>
+                        <select class="form-select" id="readingType" name="reading_type" required>
+                            <option value="" selected disabled>Select reading type</option>
+                            <option value="blood_glucose">Blood Glucose</option>
+                            <option value="blood_pressure">Blood Pressure</option>
+                            <option value="weight">Weight</option>
+                            <option value="activity">Activity (Steps)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Dynamic fields based on reading type -->
+                    <div id="glucoseFields" class="reading-type-fields d-none">
+                        <div class="mb-3">
+                            <label for="glucoseValue" class="form-label">Blood Glucose Value</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="glucoseValue" name="glucose_value" step="0.1" min="0">
+                                <select class="form-select" id="glucoseUnit" name="glucose_unit">
+                                    <option value="mg/dL" selected>mg/dL</option>
+                                    <option value="mmol/L">mmol/L</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="glucoseMealStatus" class="form-label">Meal Status</label>
+                            <select class="form-select" id="glucoseMealStatus" name="meal_status">
+                                <option value="before_meal">Before Meal</option>
+                                <option value="after_meal">After Meal</option>
+                                <option value="fasting">Fasting</option>
+                                <option value="bedtime">Bedtime</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="bpFields" class="reading-type-fields d-none">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label for="systolicValue" class="form-label">Systolic</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="systolicValue" name="systolic_value" min="0">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label for="diastolicValue" class="form-label">Diastolic</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="diastolicValue" name="diastolic_value" min="0">
+                                    <span class="input-group-text">mmHg</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="pulseValue" class="form-label">Pulse Rate (optional)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="pulseValue" name="pulse_value" min="0">
+                                <span class="input-group-text">bpm</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="weightFields" class="reading-type-fields d-none">
+                        <div class="mb-3">
+                            <label for="weightValue" class="form-label">Weight</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="weightValue" name="weight_value" step="0.1" min="0">
+                                <select class="form-select" id="weightUnit" name="weight_unit">
+                                    <option value="kg" selected>kg</option>
+                                    <option value="lbs">lbs</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="activityFields" class="reading-type-fields d-none">
+                        <div class="mb-3">
+                            <label for="stepsValue" class="form-label">Steps</label>
+                            <input type="number" class="form-control" id="stepsValue" name="steps_value" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="readingTimestamp" class="form-label">Date & Time</label>
+                        <input type="datetime-local" class="form-control" id="readingTimestamp" name="timestamp">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="readingNotes" class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" id="readingNotes" name="notes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addReadingForm" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Save Reading
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reading Detail Modal -->
+<div class="modal fade" id="readingDetailModal" tabindex="-1" aria-labelledby="readingDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="readingDetailModalLabel">Reading Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="readingDetailContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Process the readings data for charts and statistics
+    const readings = {{ readings|tojson }};
+    
+    if (readings.length > 0) {
+        // Initialize chart based on reading type
+        const readingType = '{{ reading_type }}';
+        
+        // Calculate statistics
+        const abnormalCount = readings.filter(r => r.is_abnormal).length;
+        document.getElementById('abnormalCount').textContent = abnormalCount;
+        
+        // Display last reading
+        const lastReading = readings[0]; // Assuming they're sorted by timestamp desc
+        let lastReadingValue = '';
+        
+        // Create dataset for trend chart
+        let trendChartData = [];
+        let trendChartLabels = [];
+        let trendChartTitle = '';
+        let avgValue = 0;
+        
+        if (readingType === 'all') {
+            // Multiple types - just display counts
+            document.getElementById('lastReading').textContent = '—';
+            document.getElementById('avgReading').textContent = '—';
+            
+            // Group readings by type for chart
+            const readingsByType = {};
+            readings.forEach(r => {
+                if (!readingsByType[r.reading_type]) {
+                    readingsByType[r.reading_type] = 0;
+                }
+                readingsByType[r.reading_type]++;
+            });
+            
+            // Setup chart
+            trendChartTitle = 'Reading Distribution';
+            trendChartLabels = Object.keys(readingsByType).map(k => k.replace('_', ' ').charAt(0).toUpperCase() + k.replace('_', ' ').slice(1));
+            trendChartData = Object.values(readingsByType);
+            
+            // Create pie chart
+            const ctx = document.getElementById('trendChart');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: trendChartLabels,
+                    datasets: [{
+                        data: trendChartData,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        title: {
+                            display: true,
+                            text: trendChartTitle
+                        }
+                    }
+                }
+            });
+        } else {
+            // Specific type - create line chart
+            let title = '';
+            let unit = '';
+            let values = [];
+            
+            if (readingType === 'blood_glucose') {
+                title = 'Blood Glucose Trend';
+                
+                // Get values and convert to consistent unit if needed
+                values = readings.map(r => {
+                    if (r.unit === 'mmol/L') {
+                        return r.value * 18; // Convert to mg/dL
+                    }
+                    return r.value;
+                });
+                
+                unit = 'mg/dL';
+                
+                if (lastReading.reading_type === 'blood_glucose') {
+                    lastReadingValue = `${lastReading.value} ${lastReading.unit}`;
+                }
+            } else if (readingType === 'blood_pressure') {
+                title = 'Blood Pressure Trend';
+                
+                // For BP we need to use systolic/diastolic values
+                const systolicValues = readings
+                    .filter(r => r.value_systolic)
+                    .map(r => r.value_systolic);
+                    
+                const diastolicValues = readings
+                    .filter(r => r.value_diastolic)
+                    .map(r => r.value_diastolic);
+                
+                if (systolicValues.length > 0 && diastolicValues.length > 0) {
+                    // Calculate average for BP (using systolic)
+                    avgValue = Math.round(systolicValues.reduce((a, b) => a + b, 0) / systolicValues.length);
+                    document.getElementById('avgReading').textContent = `${avgValue}/
+                        ${Math.round(diastolicValues.reduce((a, b) => a + b, 0) / diastolicValues.length)} mmHg`;
+                }
+                
+                unit = 'mmHg';
+                
+                if (lastReading.reading_type === 'blood_pressure' && lastReading.value_systolic && lastReading.value_diastolic) {
+                    lastReadingValue = `${lastReading.value_systolic}/${lastReading.value_diastolic} mmHg`;
+                }
+                
+                // Create BP chart
+                const bpReadings = readings.filter(r => r.reading_type === 'blood_pressure' && r.value_systolic && r.value_diastolic);
+                if (bpReadings.length > 0) {
+                    createBloodPressureChart('trendChart', bpReadings.reverse());
+                }
+                
+                // Skip the rest of the function since we've created a specialized BP chart
+                document.getElementById('lastReading').textContent = lastReadingValue || '—';
+                return;
+            } else if (readingType === 'weight') {
+                title = 'Weight Trend';
+                values = readings.map(r => r.value);
+                unit = readings[0].unit;
+                
+                if (lastReading.reading_type === 'weight') {
+                    lastReadingValue = `${lastReading.value} ${lastReading.unit}`;
+                }
+            } else if (readingType === 'activity') {
+                title = 'Activity (Steps) Trend';
+                values = readings.map(r => r.value);
+                unit = 'steps';
+                
+                if (lastReading.reading_type === 'activity') {
+                    lastReadingValue = `${lastReading.value} steps`;
+                }
+            }
+            
+            // Calculate average (except for BP which is handled above)
+            if (readingType !== 'blood_pressure' && values.length > 0) {
+                avgValue = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+                document.getElementById('avgReading').textContent = `${avgValue} ${unit}`;
+            }
+            
+            // Set last reading
+            document.getElementById('lastReading').textContent = lastReadingValue || '—';
+            
+            // Create chart (except for BP which is handled above)
+            if (readingType !== 'blood_pressure') {
+                // For all other reading types, create a line chart
+                const dates = readings.map(r => {
+                    const date = new Date(r.timestamp);
+                    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }).reverse();
+                
+                values = values.reverse();
+                
+                const ctx = document.getElementById('trendChart');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: title,
+                            data: values,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: unit
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date & Time'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+    
+    // Handle showing/hiding appropriate fields in the Add Reading modal
+    const readingTypeSelect = document.getElementById('readingType');
+    const readingTypeFields = document.querySelectorAll('.reading-type-fields');
+    
+    if (readingTypeSelect) {
+        readingTypeSelect.addEventListener('change', function() {
+            // Hide all fields first
+            readingTypeFields.forEach(field => {
+                field.classList.add('d-none');
+            });
+            
+            // Show the relevant fields
+            const selectedType = this.value;
+            if (selectedType === 'blood_glucose') {
+                document.getElementById('glucoseFields').classList.remove('d-none');
+            } else if (selectedType === 'blood_pressure') {
+                document.getElementById('bpFields').classList.remove('d-none');
+            } else if (selectedType === 'weight') {
+                document.getElementById('weightFields').classList.remove('d-none');
+            } else if (selectedType === 'activity') {
+                document.getElementById('activityFields').classList.remove('d-none');
+            }
+        });
+    }
+    
+    // Set current datetime for the timestamp field
+    const timestampField = document.getElementById('readingTimestamp');
+    if (timestampField) {
+        const now = new Date();
+        const localISOString = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+        timestampField.value = localISOString;
+    }
+    
+    // Reading detail modal
+    const readingDetailModal = document.getElementById('readingDetailModal');
+    if (readingDetailModal) {
+        readingDetailModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const readingId = button.getAttribute('data-reading-id');
+            const readingDetailContent = document.getElementById('readingDetailContent');
+            
+            // Find the reading in the table
+            const row = button.closest('tr');
+            const cells = row.querySelectorAll('td');
+            
+            const timestamp = cells[0].textContent;
+            const type = cells[1].textContent;
+            const value = cells[2].textContent;
+            const source = cells[3].textContent;
+            const status = cells[4].querySelector('.badge').textContent;
+            
+            // Set reading details content
+            readingDetailContent.innerHTML = `
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between">
+                        <h5>${type}</h5>
+                        <span class="badge ${status === 'Abnormal' ? 'bg-danger' : 'bg-success'}">${status}</span>
+                    </div>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>${timestamp}
+                    </p>
+                    <p class="text-muted">
+                        <i class="fas fa-tablet-alt me-2"></i>${source}
+                    </p>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body text-center">
+                        <h2>${value}</h2>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Reference Range:</h6>
+                    <p class="mb-1">
+                    ${type === 'Blood Glucose' ? 
+                        'Target: 70-130 mg/dL before meals, <180 mg/dL after meals' : 
+                        (type === 'Blood Pressure' ? 
+                            'Normal: <120/80 mmHg<br>Elevated: 120-129/<80 mmHg<br>Stage 1 Hypertension: 130-139/80-89 mmHg' : 
+                            'No reference range available')}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Notes:</h6>
+                    <p class="text-muted fst-italic">No notes for this reading.</p>
+                </div>
+            `;
+        });
+    }
+});
+</script>
+{% endblock %}

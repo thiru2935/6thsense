@@ -1,0 +1,425 @@
+{% extends "layout.html" %}
+
+{% block title %}Patient Detail - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patients') }}">Patients</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ user.get_full_name() }}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Patient Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-1">{{ user.get_full_name() }}</h2>
+                    <p class="text-muted mb-2">
+                        {% if patient.date_of_birth %}
+                            {{ ((now - patient.date_of_birth).days / 365)|int }} years |
+                        {% endif %}
+                        {{ patient.gender|title if patient.gender else 'Gender not specified' }} |
+                        {{ patient.diagnosis or 'No diagnosis' }}
+                    </p>
+                    <p>
+                        <i class="fas fa-envelope me-2"></i>{{ user.email }}<br>
+                        {% if patient.contact_number %}
+                            <i class="fas fa-phone me-2"></i>{{ patient.contact_number }}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4 text-center text-md-end">
+                    <div class="risk-score-container d-inline-block">
+                        <canvas id="riskGaugeChart"></canvas>
+                        <div class="risk-indicator 
+                            {% if risk_score < 30 %}risk-low
+                            {% elif risk_score < 70 %}risk-medium
+                            {% else %}risk-high{% endif %}">
+                            {{ risk_score }}
+                        </div>
+                    </div>
+                    <p class="mt-2">
+                        {% if risk_score < 30 %}
+                            <span class="badge bg-success">Low Risk</span>
+                        {% elif risk_score < 70 %}
+                            <span class="badge bg-warning">Medium Risk</span>
+                        {% else %}
+                            <span class="badge bg-danger">High Risk</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicationModal">
+            <i class="fas fa-prescription me-2"></i>Add Medication
+        </button>
+        <button class="btn btn-outline-primary">
+            <i class="fas fa-notes-medical me-2"></i>Add Clinical Note
+        </button>
+        <button class="btn btn-outline-primary">
+            <i class="fas fa-calendar-alt me-2"></i>Schedule Appointment
+        </button>
+        <button class="btn btn-outline-primary">
+            <i class="fas fa-comment-medical me-2"></i>Send Message
+        </button>
+    </div>
+
+    <!-- Risk Factors and Trends -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Risk Factors</h5>
+                </div>
+                <div class="card-body">
+                    {% if risk_factors %}
+                        <ul class="list-group">
+                            {% for factor in risk_factors %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ factor.name }}</h6>
+                                        <p class="mb-0 small text-muted">{{ factor.description }}</p>
+                                    </div>
+                                    <span class="badge rounded-pill bg-{{ factor.severity }}">{{ factor.severity|title }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                            <p>No significant risk factors identified.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="healthTrendsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active text-white" id="glucose-tab" data-bs-toggle="tab" data-bs-target="#glucose" type="button" role="tab">Blood Glucose</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link text-white" id="bp-tab" data-bs-toggle="tab" data-bs-target="#bp" type="button" role="tab">Blood Pressure</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="healthTrendsContent">
+                        <div class="tab-pane fade show active" id="glucose" role="tabpanel" aria-labelledby="glucose-tab">
+                            {% if glucose_readings %}
+                                <div class="chart-container">
+                                    <canvas id="glucoseChart"></canvas>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
+                                    <p>No glucose readings available yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="tab-pane fade" id="bp" role="tabpanel" aria-labelledby="bp-tab">
+                            {% if bp_readings %}
+                                <div class="chart-container">
+                                    <canvas id="bpChart"></canvas>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
+                                    <p>No blood pressure readings available yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Readings and Medications -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-4 mb-md-0">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-medical-alt me-2"></i>Recent Readings</h5>
+                </div>
+                <div class="card-body">
+                    {% if readings %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Value</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reading in readings %}
+                                        <tr class="{% if reading.is_abnormal %}reading-abnormal{% else %}reading-normal{% endif %}">
+                                            <td>{{ reading.timestamp.strftime('%b %d, %H:%M') }}</td>
+                                            <td>{{ reading.reading_type|replace('_', ' ')|title }}</td>
+                                            <td>
+                                                {% if reading.reading_type == 'blood_pressure' and reading.value_systolic and reading.value_diastolic %}
+                                                    {{ reading.value_systolic }}/{{ reading.value_diastolic }} {{ reading.unit }}
+                                                {% else %}
+                                                    {{ reading.value }} {{ reading.unit }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if reading.is_abnormal %}
+                                                    <span class="badge bg-danger">Abnormal</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Normal</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
+                            <p>No readings available yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-pills me-2"></i>Medications</h5>
+                </div>
+                <div class="card-body">
+                    {% if medications %}
+                        <div class="list-group">
+                            {% for med in medications %}
+                                <div class="list-group-item {% if med.is_active %}medication-active{% else %}medication-inactive{% endif %}">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ med.name }}</h6>
+                                        <small>
+                                            {% if med.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <p class="mb-1">{{ med.dosage }} | {{ med.frequency }}</p>
+                                    <small class="text-muted">
+                                        Started: {{ med.start_date.strftime('%b %d, %Y') if med.start_date else 'N/A' }} |
+                                        {% if med.end_date %}
+                                            Ends: {{ med.end_date.strftime('%b %d, %Y') }}
+                                        {% else %}
+                                            Ongoing
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-prescription-bottle fa-3x mb-3 text-muted"></i>
+                            <p>No medications prescribed yet.</p>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicationModal">
+                                <i class="fas fa-plus me-2"></i>Add Medication
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts and Devices -->
+    <div class="row">
+        <div class="col-md-6 mb-4 mb-md-0">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Alerts</h5>
+                </div>
+                <div class="card-body">
+                    {% if alerts %}
+                        <div class="list-group">
+                            {% for alert in alerts %}
+                                <div class="list-group-item alert-severity-{{ alert.severity }}">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ alert.alert_type|replace('_', ' ')|title }}</h6>
+                                        <small>{{ alert.timestamp.strftime('%b %d, %H:%M') }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ alert.message }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            {% if alert.severity == 'high' %}
+                                                <span class="text-danger">High Priority</span>
+                                            {% elif alert.severity == 'medium' %}
+                                                <span class="text-warning">Medium Priority</span>
+                                            {% else %}
+                                                <span class="text-info">Low Priority</span>
+                                            {% endif %}
+                                        </small>
+                                        <form method="POST" action="{{ url_for('provider.resolve_alert', alert_id=alert.id) }}">
+                                            <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-check-circle me-1"></i>Resolve
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                            <p>No active alerts for this patient.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Connected Devices</h5>
+                </div>
+                <div class="card-body">
+                    {% if devices %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Device</th>
+                                        <th>Model</th>
+                                        <th>Last Synced</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for device in devices %}
+                                        <tr>
+                                            <td>{{ device.device_type|replace('_', ' ')|title }}</td>
+                                            <td>{{ device.manufacturer }} {{ device.model }}</td>
+                                            <td>
+                                                {% if device.last_synced %}
+                                                    {{ device.last_synced.strftime('%b %d, %Y %H:%M') }}
+                                                {% else %}
+                                                    Never
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if device.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-mobile-alt fa-3x mb-3 text-muted"></i>
+                            <p>No devices connected yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Medication Modal -->
+<div class="modal fade" id="addMedicationModal" tabindex="-1" aria-labelledby="addMedicationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addMedicationModalLabel"><i class="fas fa-prescription me-2"></i>Add Medication</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMedicationForm" method="POST" action="{{ url_for('provider.add_medication', patient_id=patient.id) }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Medication Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dosage" class="form-label">Dosage</label>
+                        <input type="text" class="form-control" id="dosage" name="dosage" placeholder="e.g., 500mg" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="frequency" class="form-label">Frequency</label>
+                        <input type="text" class="form-control" id="frequency" name="frequency" placeholder="e.g., Twice daily with meals" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date (Optional)</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="instructions" class="form-label">Special Instructions</label>
+                        <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Any special instructions for taking this medication"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addMedicationForm" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Save Medication
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the risk gauge chart
+    const riskScore = {{ risk_score }};
+    createRiskGaugeChart('riskGaugeChart', riskScore);
+    
+    // Initialize glucose chart if data available
+    {% if glucose_readings %}
+        const glucoseReadings = {{ glucose_readings|tojson }};
+        createGlucoseChart('glucoseChart', glucoseReadings);
+    {% endif %}
+    
+    // Initialize blood pressure chart if data available
+    {% if bp_readings %}
+        const bpReadings = {{ bp_readings|tojson }};
+        createBloodPressureChart('bpChart', bpReadings);
+    {% endif %}
+    
+    // Set current date for the start date field in the add medication form
+    const startDateField = document.getElementById('start_date');
+    if (startDateField) {
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        startDateField.value = formattedDate;
+    }
+});
+</script>
+{% endblock %}

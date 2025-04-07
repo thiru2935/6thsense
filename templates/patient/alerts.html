@@ -1,0 +1,375 @@
+{% extends "layout.html" %}
+
+{% block title %}My Alerts - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-bell me-2"></i>My Alerts</h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('patient.alerts', show_resolved='false') }}" class="btn btn-outline-primary {% if not show_resolved %}active{% endif %}">
+                Active Alerts
+            </a>
+            <a href="{{ url_for('patient.alerts', show_resolved='true') }}" class="btn btn-outline-primary {% if show_resolved %}active{% endif %}">
+                All Alerts
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter and Sort Options -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text">Severity</span>
+                        <select class="form-select" id="severityFilter">
+                            <option value="all" selected>All Severities</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text">Type</span>
+                        <select class="form-select" id="typeFilter">
+                            <option value="all" selected>All Types</option>
+                            <option value="abnormal_reading">Abnormal Reading</option>
+                            <option value="medication">Medication</option>
+                            <option value="appointment">Appointment</option>
+                            <option value="device">Device</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text">Sort</span>
+                        <select class="form-select" id="sortOrder">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="severity">By Severity</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts List -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                {% if show_resolved %}
+                    <i class="fas fa-history me-2"></i>All Alerts
+                {% else %}
+                    <i class="fas fa-exclamation-circle me-2"></i>Active Alerts
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if alerts %}
+                <div class="list-group alert-list">
+                    {% for alert in alerts %}
+                        <div class="list-group-item list-group-item-action d-flex gap-3 alert-severity-{{ alert.severity }}" 
+                             data-severity="{{ alert.severity }}" 
+                             data-type="{{ alert.alert_type }}">
+                            <div class="alert-icon me-3 align-self-center">
+                                {% if alert.severity == 'high' %}
+                                    <span class="badge bg-danger p-2 rounded-circle">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </span>
+                                {% elif alert.severity == 'medium' %}
+                                    <span class="badge bg-warning p-2 rounded-circle">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-info p-2 rounded-circle">
+                                        <i class="fas fa-info-circle"></i>
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="alert-content flex-grow-1">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ alert.alert_type|replace('_', ' ')|title }}</h6>
+                                    <small class="text-muted">{{ alert.timestamp.strftime('%b %d, %Y %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1">{{ alert.message }}</p>
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        {% if alert.severity == 'high' %}
+                                            <span class="text-danger">High Priority</span>
+                                        {% elif alert.severity == 'medium' %}
+                                            <span class="text-warning">Medium Priority</span>
+                                        {% else %}
+                                            <span class="text-info">Low Priority</span>
+                                        {% endif %}
+                                    </small>
+                                    {% if alert.is_resolved %}
+                                        <span class="badge bg-secondary">Resolved</span>
+                                    {% else %}
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#alertDetailModal" data-alert-id="{{ alert.id }}">
+                                                <i class="fas fa-eye me-1"></i>View
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle fa-4x mb-3 text-success"></i>
+                    <h4>No alerts found</h4>
+                    <p class="text-muted">
+                        {% if show_resolved %}
+                            You don't have any alerts in your history.
+                        {% else %}
+                            You don't have any active alerts at the moment. Great job!
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tips for Managing Alerts -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Tips for Managing Health Alerts</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h6><i class="fas fa-tint me-2"></i>Blood Glucose Alerts</h6>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-circle-notch me-1"></i> Check readings more frequently when sick</li>
+                        <li><i class="fas fa-circle-notch me-1"></i> Keep glucose tablets for low sugar events</li>
+                        <li><i class="fas fa-circle-notch me-1"></i> Stay hydrated when glucose is high</li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6><i class="fas fa-heartbeat me-2"></i>Blood Pressure Alerts</h6>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-circle-notch me-1"></i> Reduce sodium intake for high readings</li>
+                        <li><i class="fas fa-circle-notch me-1"></i> Practice relaxation techniques</li>
+                        <li><i class="fas fa-circle-notch me-1"></i> Take medications at the same time daily</li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <h6><i class="fas fa-pills me-2"></i>Medication Alerts</h6>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-circle-notch me-1"></i> Use a pill organizer for better adherence</li>
+                        <li><i class="fas fa-circle-notch me-1"></i> Set an alarm for medication times</li>
+                        <li><i class="fas fa-circle-notch me-1"></i> Keep a medication log for better tracking</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Detail Modal -->
+<div class="modal fade" id="alertDetailModal" tabindex="-1" aria-labelledby="alertDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="alertDetailModalLabel">Alert Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertDetailContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="acknowledgeAlertBtn">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter and sort functionality
+    const severityFilter = document.getElementById('severityFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const sortOrder = document.getElementById('sortOrder');
+    const alertList = document.querySelector('.alert-list');
+    
+    if (severityFilter && typeFilter && sortOrder && alertList) {
+        function applyFilters() {
+            const severity = severityFilter.value;
+            const type = typeFilter.value;
+            const sort = sortOrder.value;
+            
+            // Get all alert items
+            const alerts = Array.from(alertList.querySelectorAll('.list-group-item'));
+            
+            // Filter alerts
+            alerts.forEach(alert => {
+                const alertSeverity = alert.dataset.severity;
+                const alertType = alert.dataset.type;
+                let visible = true;
+                
+                if (severity !== 'all' && alertSeverity !== severity) {
+                    visible = false;
+                }
+                
+                if (type !== 'all' && alertType !== type) {
+                    visible = false;
+                }
+                
+                alert.style.display = visible ? '' : 'none';
+            });
+            
+            // Sort alerts
+            const visibleAlerts = alerts.filter(alert => alert.style.display !== 'none');
+            
+            if (sort === 'newest') {
+                // Already sorted by default
+            } else if (sort === 'oldest') {
+                // Reverse the order
+                visibleAlerts.reverse();
+            } else if (sort === 'severity') {
+                // Sort by severity (high, medium, low)
+                visibleAlerts.sort((a, b) => {
+                    const aSeverity = a.dataset.severity;
+                    const bSeverity = b.dataset.severity;
+                    
+                    const severityOrder = { high: 0, medium: 1, low: 2 };
+                    return severityOrder[aSeverity] - severityOrder[bSeverity];
+                });
+            }
+            
+            // Reappend alerts in new order
+            visibleAlerts.forEach(alert => {
+                alertList.appendChild(alert);
+            });
+        }
+        
+        // Add event listeners for filters
+        severityFilter.addEventListener('change', applyFilters);
+        typeFilter.addEventListener('change', applyFilters);
+        sortOrder.addEventListener('change', applyFilters);
+    }
+    
+    // Alert detail modal
+    const alertDetailModal = document.getElementById('alertDetailModal');
+    if (alertDetailModal) {
+        alertDetailModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const alertId = button.getAttribute('data-alert-id');
+            const alertDetailContent = document.getElementById('alertDetailContent');
+            
+            // In a real implementation, this would fetch the alert details from the server
+            // For this demo, we'll just simulate it with the data we already have
+            const alertItem = button.closest('.list-group-item');
+            const alertTitle = alertItem.querySelector('h6').textContent;
+            const alertMessage = alertItem.querySelector('p').textContent;
+            const alertTimestamp = alertItem.querySelector('small').textContent;
+            const alertSeverity = alertItem.dataset.severity;
+            
+            let alertTypeIcon = '';
+            if (alertItem.dataset.type.includes('glucose')) {
+                alertTypeIcon = '<i class="fas fa-tint text-danger me-2"></i>';
+            } else if (alertItem.dataset.type.includes('pressure')) {
+                alertTypeIcon = '<i class="fas fa-heartbeat text-warning me-2"></i>';
+            } else if (alertItem.dataset.type.includes('medication')) {
+                alertTypeIcon = '<i class="fas fa-pills text-primary me-2"></i>';
+            } else {
+                alertTypeIcon = '<i class="fas fa-exclamation-circle text-info me-2"></i>';
+            }
+            
+            // Set the content of the modal
+            let content = `
+                <div class="alert alert-${alertSeverity === 'high' ? 'danger' : (alertSeverity === 'medium' ? 'warning' : 'info')}">
+                    <h5>${alertTypeIcon}${alertTitle}</h5>
+                    <p>${alertMessage}</p>
+                    <small class="text-muted">${alertTimestamp}</small>
+                </div>
+                
+                <h6 class="mt-4">Recommended Actions:</h6>
+                <ul>
+            `;
+            
+            // Add recommendations based on alert type
+            if (alertItem.dataset.type.includes('glucose')) {
+                if (alertMessage.toLowerCase().includes('low')) {
+                    content += `
+                        <li>Consume 15-20 grams of fast-acting carbohydrates</li>
+                        <li>Re-check your blood glucose in 15 minutes</li>
+                        <li>If still below 70 mg/dL, repeat treatment</li>
+                    `;
+                } else if (alertMessage.toLowerCase().includes('high')) {
+                    content += `
+                        <li>Drink water to stay hydrated</li>
+                        <li>Check for ketones if glucose is over 240 mg/dL</li>
+                        <li>Take insulin as prescribed by your doctor</li>
+                    `;
+                }
+            } else if (alertItem.dataset.type.includes('pressure')) {
+                if (alertMessage.toLowerCase().includes('high')) {
+                    content += `
+                        <li>Rest for 5 minutes and take another reading</li>
+                        <li>Take medications as prescribed</li>
+                        <li>Reduce sodium intake and stress</li>
+                    `;
+                } else if (alertMessage.toLowerCase().includes('low')) {
+                    content += `
+                        <li>Sit or lie down and avoid sudden position changes</li>
+                        <li>Stay hydrated</li>
+                        <li>Contact your healthcare provider if symptoms persist</li>
+                    `;
+                }
+            } else if (alertItem.dataset.type.includes('medication')) {
+                content += `
+                    <li>Take your medication as soon as possible</li>
+                    <li>Set reminders to avoid missing doses</li>
+                    <li>Discuss with your doctor if you frequently miss doses</li>
+                `;
+            }
+            
+            content += `
+                </ul>
+                
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="alertAcknowledged">
+                    <label class="form-check-label" for="alertAcknowledged">
+                        I acknowledge this alert and have taken appropriate action
+                    </label>
+                </div>
+            `;
+            
+            alertDetailContent.innerHTML = content;
+            
+            // Set button action
+            const acknowledgeBtn = document.getElementById('acknowledgeAlertBtn');
+            acknowledgeBtn.onclick = function() {
+                const checkbox = document.getElementById('alertAcknowledged');
+                if (checkbox && checkbox.checked) {
+                    // In a real app, this would send a request to the server
+                    showToast('Alert acknowledged successfully', 'success');
+                    
+                    // Close the modal
+                    const modalInstance = bootstrap.Modal.getInstance(alertDetailModal);
+                    modalInstance.hide();
+                    
+                    // Update the UI
+                    alertItem.querySelector('.btn-group').innerHTML = '<span class="badge bg-success">Acknowledged</span>';
+                } else {
+                    alert('Please check the acknowledgement box first');
+                }
+            };
+        });
+    }
+});
+</script>
+{% endblock %}

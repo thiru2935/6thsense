@@ -1,0 +1,139 @@
+{% extends "layout.html" %}
+
+{% block title %}AI Health Assistant - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-robot me-2"></i>AI Health Assistant</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Chatbot Interface -->
+            <div class="chatbot-container shadow-sm">
+                <div class="chatbot-header">
+                    <h5 class="mb-0"><i class="fas fa-comment-medical me-2"></i>HealthSync Assistant</h5>
+                </div>
+                <div class="chatbot-messages" id="chatbot-messages">
+                    <!-- Welcome Message -->
+                    <div class="chat-message bot-message">
+                        <div class="message-content">
+                            Hello! I'm your HealthSync Assistant. How can I help you today? You can ask me about diabetes management, medication information, healthy lifestyle tips, or how to use the platform.
+                        </div>
+                        <div class="message-timestamp">{{ now.strftime('%H:%M') }}</div>
+                    </div>
+                    
+                    <!-- Previous Messages -->
+                    {% for message in messages %}
+                        <div class="chat-message {{ 'user-message' if message.sender_type == 'user' else 'bot-message' }}">
+                            <div class="message-content">
+                                {{ message.message }}
+                            </div>
+                            <div class="message-timestamp">{{ message.timestamp.strftime('%H:%M') }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="chatbot-input">
+                    <form id="chatbot-form" class="d-flex w-100">
+                        <input type="text" class="form-control me-2" id="chatbot-input" placeholder="Type your question here..." autocomplete="off">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <!-- Suggested Topics -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Suggested Topics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <button type="button" class="list-group-item list-group-item-action suggested-question">What is diabetes?</button>
+                        <button type="button" class="list-group-item list-group-item-action suggested-question">How often should I check my blood sugar?</button>
+                        <button type="button" class="list-group-item list-group-item-action suggested-question">What are the symptoms of low blood sugar?</button>
+                        <button type="button" class="list-group-item list-group-item-action suggested-question">What foods should I avoid with diabetes?</button>
+                        <button type="button" class="list-group-item list-group-item-action suggested-question">How can I remember to take my medications?</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Language Selection -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-language me-2"></i>Language</h5>
+                </div>
+                <div class="card-body">
+                    <select class="form-select" id="chatLanguage">
+                        <option value="en" selected>English</option>
+                        <option value="es">Español (Spanish)</option>
+                        <option value="fr">Français (French)</option>
+                        <option value="de">Deutsch (German)</option>
+                        <option value="zh">中文 (Chinese)</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                    </select>
+                    <div class="form-text mt-2">
+                        <i class="fas fa-info-circle me-1"></i>Change the language for the AI assistant responses.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Information -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>About the Assistant</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">The HealthSync AI Assistant can provide general health information and guidance about chronic disease management. It can help with:</p>
+                    <ul class="small">
+                        <li>Understanding diabetes, hypertension, and heart disease</li>
+                        <li>Medication information and reminders</li>
+                        <li>Healthy lifestyle tips</li>
+                        <li>Interpreting your health readings</li>
+                        <li>Using the HealthSync platform</li>
+                    </ul>
+                    <div class="alert alert-warning small mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> The AI Assistant provides general information only and is not a substitute for professional medical advice. Always consult with your healthcare provider for personalized guidance.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle suggested questions
+    const suggestedQuestions = document.querySelectorAll('.suggested-question');
+    const chatbotInput = document.getElementById('chatbot-input');
+    const chatbotForm = document.getElementById('chatbot-form');
+    
+    suggestedQuestions.forEach(question => {
+        question.addEventListener('click', function() {
+            chatbotInput.value = this.textContent;
+            chatbotInput.focus();
+            // Optional: automatically submit the form
+            chatbotForm.dispatchEvent(new Event('submit'));
+        });
+    });
+    
+    // Handle language change
+    const chatLanguage = document.getElementById('chatLanguage');
+    chatLanguage.addEventListener('change', function() {
+        // In a real implementation, this would update the session language preference
+        // For now, just show a toast notification
+        showToast(`Language changed to ${this.options[this.selectedIndex].text}`, 'info');
+    });
+    
+    // Scroll to bottom of chat messages on page load
+    scrollToBottom();
+});
+</script>
+{% endblock %}

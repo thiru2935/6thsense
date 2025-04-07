@@ -1,0 +1,295 @@
+{% extends "layout.html" %}
+
+{% block title %}My Medications - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-pills me-2"></i>My Medications</h1>
+    </div>
+
+    <!-- Active Medications -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-prescription-bottle-alt me-2"></i>Active Medications</h5>
+        </div>
+        <div class="card-body">
+            {% set active_medications = medications|selectattr('is_active', 'equalto', true)|list %}
+            {% if active_medications %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med in active_medications %}
+                                <tr class="medication-active">
+                                    <td>{{ med.name }}</td>
+                                    <td>{{ med.dosage }}</td>
+                                    <td>{{ med.frequency }}</td>
+                                    <td>{{ med.start_date.strftime('%b %d, %Y') if med.start_date else 'N/A' }}</td>
+                                    <td>{{ med.end_date.strftime('%b %d, %Y') if med.end_date else 'Ongoing' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#logMedicationModal" data-med-id="{{ med.id }}" data-med-name="{{ med.name }}">
+                                            <i class="fas fa-check me-1"></i>Log Intake
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#medicationDetail{{ med.id }}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="medicationDetail{{ med.id }}">
+                                    <td colspan="6" class="bg-light">
+                                        <div class="p-3">
+                                            <h6>Instructions:</h6>
+                                            <p>{{ med.instructions or 'No specific instructions provided.' }}</p>
+                                            
+                                            <h6 class="mt-3">Recent Logs:</h6>
+                                            {% if med.logs %}
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Date & Time</th>
+                                                                <th>Status</th>
+                                                                <th>Notes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for log in med.logs|sort(attribute='taken_at', reverse=true)|slice(0, 5) %}
+                                                                <tr>
+                                                                    <td>{{ log.taken_at.strftime('%b %d, %Y %H:%M') }}</td>
+                                                                    <td>
+                                                                        {% if log.was_taken %}
+                                                                            <span class="badge bg-success">Taken</span>
+                                                                        {% else %}
+                                                                            <span class="badge bg-danger">Missed</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>{{ log.notes or '-' }}</td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            {% else %}
+                                                <p class="text-muted">No logs recorded yet.</p>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-prescription-bottle fa-4x mb-3 text-muted"></i>
+                    <h4>No active medications</h4>
+                    <p class="text-muted">You don't have any active medications at the moment.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Inactive Medications -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="fas fa-history me-2"></i>Medication History</h5>
+        </div>
+        <div class="card-body">
+            {% set inactive_medications = medications|selectattr('is_active', 'equalto', false)|list %}
+            {% if inactive_medications %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for med in inactive_medications %}
+                                <tr class="medication-inactive">
+                                    <td>{{ med.name }}</td>
+                                    <td>{{ med.dosage }}</td>
+                                    <td>{{ med.frequency }}</td>
+                                    <td>{{ med.start_date.strftime('%b %d, %Y') if med.start_date else 'N/A' }}</td>
+                                    <td>{{ med.end_date.strftime('%b %d, %Y') if med.end_date else 'N/A' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#medicationDetail{{ med.id }}">
+                                            <i class="fas fa-info-circle"></i>Details
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="medicationDetail{{ med.id }}">
+                                    <td colspan="6" class="bg-light">
+                                        <div class="p-3">
+                                            <h6>Instructions:</h6>
+                                            <p>{{ med.instructions or 'No specific instructions provided.' }}</p>
+                                            
+                                            <h6 class="mt-3">Logs:</h6>
+                                            {% if med.logs %}
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Date & Time</th>
+                                                                <th>Status</th>
+                                                                <th>Notes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for log in med.logs|sort(attribute='taken_at', reverse=true)|slice(0, 5) %}
+                                                                <tr>
+                                                                    <td>{{ log.taken_at.strftime('%b %d, %Y %H:%M') }}</td>
+                                                                    <td>
+                                                                        {% if log.was_taken %}
+                                                                            <span class="badge bg-success">Taken</span>
+                                                                        {% else %}
+                                                                            <span class="badge bg-danger">Missed</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td>{{ log.notes or '-' }}</td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            {% else %}
+                                                <p class="text-muted">No logs recorded.</p>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-history fa-4x mb-3 text-muted"></i>
+                    <h4>No medication history</h4>
+                    <p class="text-muted">You don't have any previous medications in your history.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Medication Information -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Medication Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Remember:</strong> Always take your medications as prescribed by your healthcare provider. If you experience any side effects, contact your doctor immediately.
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-clock me-2"></i>Timing Matters</h5>
+                            <p class="card-text">Taking your medications at the same time each day helps maintain consistent levels in your body and improves effectiveness.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-utensils me-2"></i>Food Interactions</h5>
+                            <p class="card-text">Some medications work better with food, others on an empty stomach. Check your medication instructions for specific guidance.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fas fa-exclamation-triangle me-2"></i>Never Skip Doses</h5>
+                            <p class="card-text">Even if you feel better, it's important to complete your prescribed course of medication unless directed otherwise by your doctor.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Medication Modal -->
+<div class="modal fade" id="logMedicationModal" tabindex="-1" aria-labelledby="logMedicationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="logMedicationModalLabel">Log Medication</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="logMedicationForm" method="POST" action="">
+                    <input type="hidden" id="medication_id" name="medication_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Medication</label>
+                        <input type="text" class="form-control" id="medication_name" disabled>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="was_taken" id="taken_yes" value="true" checked autocomplete="off">
+                            <label class="btn btn-outline-success" for="taken_yes">Taken</label>
+                            
+                            <input type="radio" class="btn-check" name="was_taken" id="taken_no" value="false" autocomplete="off">
+                            <label class="btn btn-outline-danger" for="taken_no">Missed</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="log_notes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="log_notes" name="notes" rows="2" placeholder="Add any notes about this dose..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="logMedicationForm" class="btn btn-primary">Log Medication</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up medication log modal
+    const logMedicationModal = document.getElementById('logMedicationModal');
+    if (logMedicationModal) {
+        logMedicationModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const medId = button.getAttribute('data-med-id');
+            const medName = button.getAttribute('data-med-name');
+            
+            // Set form values
+            document.getElementById('medication_id').value = medId;
+            document.getElementById('medication_name').value = medName;
+            
+            // Set the form action
+            document.getElementById('logMedicationForm').action = `/patient/log_medication/${medId}`;
+        });
+    }
+});
+</script>
+{% endblock %}
