@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+
+{% block title %}Health Records - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('patient.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Health Records</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-file-medical me-2"></i>My Health Records</h2>
+            <p class="text-muted">View and manage your health records and control provider access.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ url_for('patient.health_records', type='all') }}" class="btn btn-outline-primary {% if record_type == 'all' %}active{% endif %}">All</a>
+                <a href="{{ url_for('patient.health_records', type='lab_result') }}" class="btn btn-outline-primary {% if record_type == 'lab_result' %}active{% endif %}">Lab Results</a>
+                <a href="{{ url_for('patient.health_records', type='clinical_note') }}" class="btn btn-outline-primary {% if record_type == 'clinical_note' %}active{% endif %}">Clinical Notes</a>
+                <a href="{{ url_for('patient.health_records', type='prescription') }}" class="btn btn-outline-primary {% if record_type == 'prescription' %}active{% endif %}">Prescriptions</a>
+            </div>
+        </div>
+    </div>
+
+    {% if records %}
+        <div class="card mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Date</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Provider Access</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                            <tr>
+                                <td>{{ record.recorded_at.strftime('%b %d, %Y') }}</td>
+                                <td>{{ record.title }}</td>
+                                <td><span class="badge bg-info">{{ record.record_type|replace('_', ' ')|title }}</span></td>
+                                <td>
+                                    {% set active_consents = record.consents|selectattr('is_active', 'equalto', true)|list %}
+                                    {% if active_consents %}
+                                        <span class="badge bg-success">{{ active_consents|length }} provider(s)</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No access granted</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('patient.view_health_record', record_id=record.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="card mb-4">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-file-medical fa-4x mb-3 text-muted"></i>
+                <h4>No Health Records Found</h4>
+                <p class="text-muted">There are no health records available in your profile yet.</p>
+                <p class="mb-0">Health records will be added by your healthcare providers or when you upload documents.</p>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Record Privacy Information -->
+    <div class="card mb-4 bg-light">
+        <div class="card-body">
+            <h5><i class="fas fa-shield-alt me-2"></i>Health Record Privacy</h5>
+            <p class="mb-0">Your health records are private by default. You can grant specific healthcare providers 
+               access to view individual records from the record detail page. You can revoke access at any time.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

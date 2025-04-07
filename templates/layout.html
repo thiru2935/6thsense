@@ -43,6 +43,12 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('patient.alerts') }}">Alerts</a>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for("patient.health_records") }}">Health Records</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for("patient.test_appointments") }}">Test Appointments</a>
+                            </li>
                             </li>
                         {% elif current_user.is_provider() %}
                             <li class="nav-item">

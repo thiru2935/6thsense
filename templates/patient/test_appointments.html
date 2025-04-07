@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+
+{% block title %}Test Appointments - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('patient.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Test Appointments</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-vial me-2"></i>Diabetic Test Appointments</h2>
+            <p class="text-muted">Schedule and manage your diabetes-related test appointments.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{{ url_for('patient.book_test') }}" class="btn btn-primary">
+                <i class="fas fa-calendar-plus me-2"></i>Book New Test
+            </a>
+        </div>
+    </div>
+
+    <!-- Upcoming Tests -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Upcoming Tests</h4>
+        </div>
+        <div class="card-body">
+            {% if upcoming_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Test Type</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in upcoming_appointments %}
+                                <tr>
+                                    <td>{{ appointment.scheduled_date.strftime('%b %d, %Y %I:%M %p') }}</td>
+                                    <td>{{ appointment.test_type }}</td>
+                                    <td>{{ appointment.location }}</td>
+                                    <td>
+                                        {% if appointment.is_confirmed %}
+                                            <span class="badge bg-success">Confirmed</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ appointment.notes }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="#" class="btn btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="#" class="btn btn-outline-danger"
+                                               onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                                <i class="fas fa-times"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x mb-3 text-muted"></i>
+                    <h5>No Upcoming Tests</h5>
+                    <p class="mb-0">You don't have any scheduled tests in the future.</p>
+                    <a href="{{ url_for('patient.book_test') }}" class="btn btn-primary mt-3">
+                        <i class="fas fa-calendar-plus me-2"></i>Book a Test
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Past Tests -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">Past Tests</h4>
+        </div>
+        <div class="card-body">
+            {% if past_appointments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Test Type</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for appointment in past_appointments %}
+                                <tr>
+                                    <td>{{ appointment.scheduled_date.strftime('%b %d, %Y %I:%M %p') }}</td>
+                                    <td>{{ appointment.test_type }}</td>
+                                    <td>{{ appointment.location }}</td>
+                                    <td>
+                                        {% if appointment.is_completed %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Missed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ appointment.notes }}</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-file-medical"></i> Results
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-history fa-3x mb-3 text-muted"></i>
+                    <h5>No Past Tests</h5>
+                    <p class="mb-0">Your past test history will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Test Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>About Diabetic Tests</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <h5>Common Diabetes Tests</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-tint fa-lg text-danger"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">HbA1c (Glycated Hemoglobin)</h6>
+                                <p class="mb-0 small text-muted">Measures average blood sugar levels over the past 2-3 months</p>
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-cookie-bite fa-lg text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Fasting Plasma Glucose</h6>
+                                <p class="mb-0 small text-muted">Measures blood sugar after an overnight fast</p>
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-chart-line fa-lg text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Oral Glucose Tolerance Test</h6>
+                                <p class="mb-0 small text-muted">Measures how your body processes glucose</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Test Preparation Tips</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><i class="fas fa-clock text-muted me-2"></i>Fast for 8-12 hours before fasting glucose tests</li>
+                        <li class="list-group-item"><i class="fas fa-prescription-bottle text-muted me-2"></i>Check with your doctor about medication adjustments</li>
+                        <li class="list-group-item"><i class="fas fa-utensils text-muted me-2"></i>Follow any specific dietary instructions</li>
+                        <li class="list-group-item"><i class="fas fa-tshirt text-muted me-2"></i>Wear comfortable clothing with easy access to your arms</li>
+                        <li class="list-group-item"><i class="fas fa-id-card text-muted me-2"></i>Bring your ID, insurance information, and doctor's referral</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

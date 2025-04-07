@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 from app import db
 from models import (User, PatientProfile, ProviderProfile, ProviderPatientAssociation, 
-                    Device, HealthReading, Medication, Alert, Prediction)
+                    Device, HealthReading, Medication, Alert, Prediction, HealthRecord, 
+                    RecordConsent, TestAppointment)
 from services.prediction import predict_risk_score, get_patient_risk_factors
 
 provider_bp = Blueprint('provider', __name__, url_prefix='/provider')
@@ -108,7 +109,7 @@ def patient_detail(patient_id):
         return redirect(url_for('provider.patients'))
     
     patient = PatientProfile.query.get_or_404(patient_id)
-    user = User.query.get(patient.user_id)
+    patient_user = User.query.get(patient.user_id)
     
     # Get risk score and factors
     risk_score = predict_risk_score(patient_id)
@@ -140,7 +141,7 @@ def patient_detail(patient_id):
     return render_template('provider/patient_detail.html',
                            provider=provider,
                            patient=patient,
-                           user=user,
+                           patient_user=patient_user,
                            risk_score=risk_score,
                            risk_factors=risk_factors,
                            readings=readings,
@@ -240,6 +241,254 @@ def add_medication(patient_id):
     
     flash('Medication added successfully', 'success')
     return redirect(url_for('provider.patient_detail', patient_id=patient_id))
+
+@provider_bp.route('/patient/<int:patient_id>/health-records')
+@login_required
+def patient_health_records(patient_id):
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if this provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to view this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+        
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    
+    # Get all records where the provider has active consent
+    consented_record_ids = db.session.query(RecordConsent.record_id).filter(
+        RecordConsent.provider_id == provider.id,
+        RecordConsent.is_active == True,
+        RecordConsent.expires_at > datetime.utcnow()
+    ).all()
+    
+    consented_record_ids = [r[0] for r in consented_record_ids]  # Flatten query result
+    
+    record_type = request.args.get('type', 'all')
+    
+    # Filter records by type if specified
+    query = HealthRecord.query.filter(
+        HealthRecord.patient_id == patient_id,
+        HealthRecord.id.in_(consented_record_ids)
+    )
+    
+    if record_type != 'all':
+        query = query.filter_by(record_type=record_type)
+        
+    records = query.order_by(HealthRecord.recorded_at.desc()).all()
+    
+    return render_template('provider/patient_health_records.html',
+                          provider=provider,
+                          patient=patient,
+                          patient_user=patient_user,
+                          records=records,
+                          record_type=record_type)
+
+@provider_bp.route('/patient/<int:patient_id>/health-records/<int:record_id>')
+@login_required
+def view_patient_health_record(patient_id, record_id):
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check provider-patient association
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to view this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+    
+    # Check if provider has consent for this specific record
+    consent = RecordConsent.query.filter_by(
+        record_id=record_id,
+        provider_id=provider.id,
+        is_active=True
+    ).filter(RecordConsent.expires_at > datetime.utcnow()).first()
+    
+    if not consent:
+        flash('You do not have consent to view this health record', 'danger')
+        return redirect(url_for('provider.patient_health_records', patient_id=patient_id))
+    
+    record = HealthRecord.query.get_or_404(record_id)
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    recorded_by = User.query.get(record.recorded_by)
+    
+    return render_template('provider/view_patient_health_record.html',
+                          provider=provider,
+                          patient=patient,
+                          patient_user=patient_user,
+                          record=record,
+                          recorded_by=recorded_by,
+                          consent=consent)
+
+@provider_bp.route('/patient/<int:patient_id>/add-health-record', methods=['GET', 'POST'])
+@login_required
+def add_patient_health_record(patient_id):
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to modify records for this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+    
+    patient = PatientProfile.query.get_or_404(patient_id)
+    
+    if request.method == 'POST':
+        record_type = request.form.get('record_type')
+        title = request.form.get('title')
+        content = request.form.get('content')
+        
+        if not all([record_type, title, content]):
+            flash('Please fill in all required fields', 'danger')
+            return redirect(url_for('provider.add_patient_health_record', patient_id=patient_id))
+        
+        # Create new health record
+        record = HealthRecord(
+            patient_id=patient_id,
+            record_type=record_type,
+            title=title,
+            content=content,
+            recorded_by=current_user.id
+        )
+        
+        db.session.add(record)
+        db.session.commit()
+        
+        flash('Health record added successfully', 'success')
+        return redirect(url_for('provider.patient_health_records', patient_id=patient_id))
+    
+    # Define record types for selection
+    record_types = [
+        'lab_result',
+        'clinical_note',
+        'prescription',
+        'radiology',
+        'surgery_note',
+        'follow_up',
+        'consultation'
+    ]
+    
+    return render_template('provider/add_health_record.html',
+                          provider=provider,
+                          patient=patient,
+                          record_types=record_types)
+
+@provider_bp.route('/patient/<int:patient_id>/test-appointments')
+@login_required
+def view_patient_test_appointments(patient_id):
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to view this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+    
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    
+    show_past = request.args.get('show_past', 'false') == 'true'
+    
+    query = TestAppointment.query.filter_by(patient_id=patient_id)
+    
+    if not show_past:
+        query = query.filter(TestAppointment.scheduled_date >= datetime.utcnow())
+        
+    appointments = query.order_by(TestAppointment.scheduled_date).all()
+    
+    return render_template('provider/patient_test_appointments.html',
+                          provider=provider,
+                          patient=patient,
+                          patient_user=patient_user,
+                          appointments=appointments,
+                          show_past=show_past)
+
+@provider_bp.route('/patient/<int:patient_id>/schedule-test', methods=['GET', 'POST'])
+@login_required
+def schedule_patient_test(patient_id):
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to schedule tests for this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+    
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    
+    if request.method == 'POST':
+        # Get form data
+        test_type = request.form.get('test_type')
+        date_str = request.form.get('date')
+        time_str = request.form.get('time')
+        location = request.form.get('location')
+        notes = request.form.get('notes', '')
+        
+        # Validate required fields
+        if not all([test_type, date_str, time_str, location]):
+            flash('All fields are required', 'danger')
+            return redirect(url_for('provider.schedule_patient_test', patient_id=patient_id))
+        
+        # Create datetime from date and time
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            time_obj = datetime.strptime(time_str, '%H:%M').time()
+            scheduled_date = datetime.combine(date_obj.date(), time_obj)
+        except ValueError:
+            flash('Invalid date or time format', 'danger')
+            return redirect(url_for('provider.schedule_patient_test', patient_id=patient_id))
+        
+        # Create new appointment (confirmed by provider)
+        appointment = TestAppointment(
+            patient_id=patient_id,
+            test_type=test_type,
+            scheduled_date=scheduled_date,
+            location=location,
+            notes=notes,
+            is_confirmed=True
+        )
+        
+        db.session.add(appointment)
+        db.session.commit()
+        
+        flash('Test appointment scheduled successfully', 'success')
+        return redirect(url_for('provider.view_patient_test_appointments', patient_id=patient_id))
+    
+    # GET request - show booking form
+    # Define test types
+    test_types = [
+        'HbA1c Test',
+        'Fasting Blood Glucose',
+        'Oral Glucose Tolerance Test',
+        'Random Blood Glucose Test',
+        'Kidney Function Test',
+        'Lipid Profile',
+        'Blood Pressure Check',
+        'Eye Examination',
+        'Foot Examination'
+    ]
+    
+    return render_template('provider/schedule_test.html',
+                          provider=provider,
+                          patient=patient,
+                          patient_user=patient_user,
+                          test_types=test_types)
 
 @provider_bp.route('/profile', methods=['GET', 'POST'])
 @login_required

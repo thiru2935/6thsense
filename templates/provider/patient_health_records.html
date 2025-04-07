@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+
+{% block title %}Patient Health Records - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patients') }}">Patients</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patient_detail', patient_id=patient.id) }}">{{ patient_user.get_full_name() }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Health Records</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-file-medical me-2"></i>{{ patient_user.get_full_name() }}'s Health Records</h2>
+            <p class="text-muted">
+                View patient health records you have access to.
+                {{ patient_user.first_name }} must grant you access to records not created by you.
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('provider.add_patient_health_record', patient_id=patient.id) }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Add New Record
+            </a>
+        </div>
+    </div>
+
+    <!-- Records you created -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Records You Created</h4>
+        </div>
+        <div class="card-body">
+            {% if created_records %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in created_records %}
+                                <tr>
+                                    <td>{{ record.recorded_at.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ record.title }}</td>
+                                    <td><span class="badge bg-info">{{ record.record_type|replace('_', ' ')|title }}</span></td>
+                                    <td>
+                                        <a href="{{ url_for('provider.view_patient_health_record', patient_id=patient.id, record_id=record.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>You haven't created any health records for this patient yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Records shared with you -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">Records Shared With You</h4>
+        </div>
+        <div class="card-body">
+            {% if shared_records %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Created By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in shared_records %}
+                                <tr>
+                                    <td>{{ record.recorded_at.strftime('%b %d, %Y') }}</td>
+                                    <td>{{ record.title }}</td>
+                                    <td><span class="badge bg-info">{{ record.record_type|replace('_', ' ')|title }}</span></td>
+                                    <td>Dr. {{ record.provider.get_full_name() }}</td>
+                                    <td>
+                                        <a href="{{ url_for('provider.view_patient_health_record', patient_id=patient.id, record_id=record.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>There are no additional records shared with you by this patient.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Record Access Information -->
+    <div class="card mb-4 bg-light">
+        <div class="card-body">
+            <h5><i class="fas fa-shield-alt me-2"></i>Health Record Access</h5>
+            <p class="mb-0">Health records are protected by patient consent. Records you create are automatically 
+            accessible to you. For records created by other providers, the patient must explicitly grant you access.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -9,7 +9,7 @@
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ url_for('provider.dashboard') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ url_for('provider.patients') }}">Patients</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ user.get_full_name() }}</li>
+                <li class="breadcrumb-item active" aria-current="page">{{ patient_user.get_full_name() }}</li>
             </ol>
         </nav>
     </div>
@@ -19,7 +19,7 @@
         <div class="card-body">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h2 class="mb-1">{{ user.get_full_name() }}</h2>
+                    <h2 class="mb-1">{{ patient_user.get_full_name() }}</h2>
                     <p class="text-muted mb-2">
                         {% if patient.date_of_birth %}
                             {{ ((now - patient.date_of_birth).days / 365)|int }} years |
@@ -28,7 +28,7 @@
                         {{ patient.diagnosis or 'No diagnosis' }}
                     </p>
                     <p>
-                        <i class="fas fa-envelope me-2"></i>{{ user.email }}<br>
+                        <i class="fas fa-envelope me-2"></i>{{ patient_user.email }}<br>
                         {% if patient.contact_number %}
                             <i class="fas fa-phone me-2"></i>{{ patient.contact_number }}
                         {% endif %}
@@ -63,12 +63,18 @@
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicationModal">
             <i class="fas fa-prescription me-2"></i>Add Medication
         </button>
-        <button class="btn btn-outline-primary">
-            <i class="fas fa-notes-medical me-2"></i>Add Clinical Note
-        </button>
-        <button class="btn btn-outline-primary">
-            <i class="fas fa-calendar-alt me-2"></i>Schedule Appointment
-        </button>
+        <a href="{{ url_for('provider.patient_health_records', patient_id=patient.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-file-medical me-2"></i>Health Records
+        </a>
+        <a href="{{ url_for('provider.add_patient_health_record', patient_id=patient.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-notes-medical me-2"></i>Add Health Record
+        </a>
+        <a href="{{ url_for('provider.view_patient_test_appointments', patient_id=patient.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-vial me-2"></i>Test Appointments
+        </a>
+        <a href="{{ url_for('provider.schedule_patient_test', patient_id=patient.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-calendar-alt me-2"></i>Schedule Test
+        </a>
         <button class="btn btn-outline-primary">
             <i class="fas fa-comment-medical me-2"></i>Send Message
         </button>
@@ -146,280 +152,279 @@
             </div>
         </div>
     </div>
-
-    <!-- Recent Readings and Medications -->
-    <div class="row mb-4">
-        <div class="col-md-6 mb-4 mb-md-0">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-file-medical-alt me-2"></i>Recent Readings</h5>
-                </div>
-                <div class="card-body">
-                    {% if readings %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Value</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for reading in readings %}
-                                        <tr class="{% if reading.is_abnormal %}reading-abnormal{% else %}reading-normal{% endif %}">
-                                            <td>{{ reading.timestamp.strftime('%b %d, %H:%M') }}</td>
-                                            <td>{{ reading.reading_type|replace('_', ' ')|title }}</td>
-                                            <td>
-                                                {% if reading.reading_type == 'blood_pressure' and reading.value_systolic and reading.value_diastolic %}
-                                                    {{ reading.value_systolic }}/{{ reading.value_diastolic }} {{ reading.unit }}
-                                                {% else %}
-                                                    {{ reading.value }} {{ reading.unit }}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if reading.is_abnormal %}
-                                                    <span class="badge bg-danger">Abnormal</span>
-                                                {% else %}
-                                                    <span class="badge bg-success">Normal</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
-                            <p>No readings available yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-pills me-2"></i>Medications</h5>
-                </div>
-                <div class="card-body">
-                    {% if medications %}
-                        <div class="list-group">
-                            {% for med in medications %}
-                                <div class="list-group-item {% if med.is_active %}medication-active{% else %}medication-inactive{% endif %}">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ med.name }}</h6>
-                                        <small>
-                                            {% if med.is_active %}
-                                                <span class="badge bg-success">Active</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Inactive</span>
-                                            {% endif %}
-                                        </small>
-                                    </div>
-                                    <p class="mb-1">{{ med.dosage }} | {{ med.frequency }}</p>
-                                    <small class="text-muted">
-                                        Started: {{ med.start_date.strftime('%b %d, %Y') if med.start_date else 'N/A' }} |
-                                        {% if med.end_date %}
-                                            Ends: {{ med.end_date.strftime('%b %d, %Y') }}
-                                        {% else %}
-                                            Ongoing
-                                        {% endif %}
-                                    </small>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-prescription-bottle fa-3x mb-3 text-muted"></i>
-                            <p>No medications prescribed yet.</p>
-                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicationModal">
-                                <i class="fas fa-plus me-2"></i>Add Medication
-                            </button>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alerts and Devices -->
-    <div class="row">
-        <div class="col-md-6 mb-4 mb-md-0">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Alerts</h5>
-                </div>
-                <div class="card-body">
-                    {% if alerts %}
-                        <div class="list-group">
-                            {% for alert in alerts %}
-                                <div class="list-group-item alert-severity-{{ alert.severity }}">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ alert.alert_type|replace('_', ' ')|title }}</h6>
-                                        <small>{{ alert.timestamp.strftime('%b %d, %H:%M') }}</small>
-                                    </div>
-                                    <p class="mb-1">{{ alert.message }}</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted">
-                                            {% if alert.severity == 'high' %}
-                                                <span class="text-danger">High Priority</span>
-                                            {% elif alert.severity == 'medium' %}
-                                                <span class="text-warning">Medium Priority</span>
-                                            {% else %}
-                                                <span class="text-info">Low Priority</span>
-                                            {% endif %}
-                                        </small>
-                                        <form method="POST" action="{{ url_for('provider.resolve_alert', alert_id=alert.id) }}">
-                                            <input type="hidden" name="patient_id" value="{{ patient.id }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-check-circle me-1"></i>Resolve
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
-                            <p>No active alerts for this patient.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Connected Devices</h5>
-                </div>
-                <div class="card-body">
-                    {% if devices %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Device</th>
-                                        <th>Model</th>
-                                        <th>Last Synced</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for device in devices %}
-                                        <tr>
-                                            <td>{{ device.device_type|replace('_', ' ')|title }}</td>
-                                            <td>{{ device.manufacturer }} {{ device.model }}</td>
-                                            <td>
-                                                {% if device.last_synced %}
-                                                    {{ device.last_synced.strftime('%b %d, %Y %H:%M') }}
-                                                {% else %}
-                                                    Never
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if device.is_active %}
-                                                    <span class="badge bg-success">Active</span>
-                                                {% else %}
-                                                    <span class="badge bg-secondary">Inactive</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-mobile-alt fa-3x mb-3 text-muted"></i>
-                            <p>No devices connected yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Medication Modal -->
-<div class="modal fade" id="addMedicationModal" tabindex="-1" aria-labelledby="addMedicationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="addMedicationModalLabel"><i class="fas fa-prescription me-2"></i>Add Medication</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addMedicationForm" method="POST" action="{{ url_for('provider.add_medication', patient_id=patient.id) }}">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Medication Name</label>
-                        <input type="text" class="form-control" id="name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="dosage" class="form-label">Dosage</label>
-                        <input type="text" class="form-control" id="dosage" name="dosage" placeholder="e.g., 500mg" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="frequency" class="form-label">Frequency</label>
-                        <input type="text" class="form-control" id="frequency" name="frequency" placeholder="e.g., Twice daily with meals" required>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="end_date" class="form-label">End Date (Optional)</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="instructions" class="form-label">Special Instructions</label>
-                        <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Any special instructions for taking this medication"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="addMedicationForm" class="btn btn-primary">
-                    <i class="fas fa-save me-2"></i>Save Medication
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the risk gauge chart
-    const riskScore = {{ risk_score }};
-    createRiskGaugeChart('riskGaugeChart', riskScore);
-    
-    // Initialize glucose chart if data available
-    {% if glucose_readings %}
-        const glucoseReadings = {{ glucose_readings|tojson }};
-        createGlucoseChart('glucoseChart', glucoseReadings);
-    {% endif %}
-    
-    // Initialize blood pressure chart if data available
-    {% if bp_readings %}
-        const bpReadings = {{ bp_readings|tojson }};
-        createBloodPressureChart('bpChart', bpReadings);
-    {% endif %}
-    
-    // Set current date for the start date field in the add medication form
-    const startDateField = document.getElementById('start_date');
-    if (startDateField) {
-        const today = new Date();
-        const formattedDate = today.toISOString().split('T')[0];
-        startDateField.value = formattedDate;
-    }
-});
-</script>
-{% endblock %}
+156:    <!-- Recent Readings and Medications -->
+157-    <div class="row mb-4">
+158-        <div class="col-md-6 mb-4 mb-md-0">
+159-            <div class="card h-100">
+160-                <div class="card-header bg-primary text-white">
+161-                    <h5 class="mb-0"><i class="fas fa-file-medical-alt me-2"></i>Recent Readings</h5>
+162-                </div>
+163-                <div class="card-body">
+164-                    {% if readings %}
+165-                        <div class="table-responsive">
+166-                            <table class="table table-hover">
+167-                                <thead>
+168-                                    <tr>
+169-                                        <th>Date</th>
+170-                                        <th>Type</th>
+171-                                        <th>Value</th>
+172-                                        <th>Status</th>
+173-                                    </tr>
+174-                                </thead>
+175-                                <tbody>
+176-                                    {% for reading in readings %}
+177-                                        <tr class="{% if reading.is_abnormal %}reading-abnormal{% else %}reading-normal{% endif %}">
+178-                                            <td>{{ reading.timestamp.strftime('%b %d, %H:%M') }}</td>
+179-                                            <td>{{ reading.reading_type|replace('_', ' ')|title }}</td>
+180-                                            <td>
+181-                                                {% if reading.reading_type == 'blood_pressure' and reading.value_systolic and reading.value_diastolic %}
+182-                                                    {{ reading.value_systolic }}/{{ reading.value_diastolic }} {{ reading.unit }}
+183-                                                {% else %}
+184-                                                    {{ reading.value }} {{ reading.unit }}
+185-                                                {% endif %}
+186-                                            </td>
+187-                                            <td>
+188-                                                {% if reading.is_abnormal %}
+189-                                                    <span class="badge bg-danger">Abnormal</span>
+190-                                                {% else %}
+191-                                                    <span class="badge bg-success">Normal</span>
+192-                                                {% endif %}
+193-                                            </td>
+194-                                        </tr>
+195-                                    {% endfor %}
+196-                                </tbody>
+197-                            </table>
+198-                        </div>
+199-                    {% else %}
+200-                        <div class="text-center py-4">
+201-                            <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
+202-                            <p>No readings available yet.</p>
+203-                        </div>
+204-                    {% endif %}
+205-                </div>
+206-            </div>
+207-        </div>
+208-        <div class="col-md-6">
+209-            <div class="card h-100">
+210-                <div class="card-header bg-primary text-white">
+211-                    <h5 class="mb-0"><i class="fas fa-pills me-2"></i>Medications</h5>
+212-                </div>
+213-                <div class="card-body">
+214-                    {% if medications %}
+215-                        <div class="list-group">
+216-                            {% for med in medications %}
+217-                                <div class="list-group-item {% if med.is_active %}medication-active{% else %}medication-inactive{% endif %}">
+218-                                    <div class="d-flex w-100 justify-content-between">
+219-                                        <h6 class="mb-1">{{ med.name }}</h6>
+220-                                        <small>
+221-                                            {% if med.is_active %}
+222-                                                <span class="badge bg-success">Active</span>
+223-                                            {% else %}
+224-                                                <span class="badge bg-secondary">Inactive</span>
+225-                                            {% endif %}
+226-                                        </small>
+227-                                    </div>
+228-                                    <p class="mb-1">{{ med.dosage }} | {{ med.frequency }}</p>
+229-                                    <small class="text-muted">
+230-                                        Started: {{ med.start_date.strftime('%b %d, %Y') if med.start_date else 'N/A' }} |
+231-                                        {% if med.end_date %}
+232-                                            Ends: {{ med.end_date.strftime('%b %d, %Y') }}
+233-                                        {% else %}
+234-                                            Ongoing
+235-                                        {% endif %}
+236-                                    </small>
+237-                                </div>
+238-                            {% endfor %}
+239-                        </div>
+240-                    {% else %}
+241-                        <div class="text-center py-4">
+242-                            <i class="fas fa-prescription-bottle fa-3x mb-3 text-muted"></i>
+243-                            <p>No medications prescribed yet.</p>
+244-                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addMedicationModal">
+245-                                <i class="fas fa-plus me-2"></i>Add Medication
+246-                            </button>
+247-                        </div>
+248-                    {% endif %}
+249-                </div>
+250-            </div>
+251-        </div>
+252-    </div>
+253-
+254-    <!-- Alerts and Devices -->
+255-    <div class="row">
+256-        <div class="col-md-6 mb-4 mb-md-0">
+257-            <div class="card h-100">
+258-                <div class="card-header bg-primary text-white">
+259-                    <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Alerts</h5>
+260-                </div>
+261-                <div class="card-body">
+262-                    {% if alerts %}
+263-                        <div class="list-group">
+264-                            {% for alert in alerts %}
+265-                                <div class="list-group-item alert-severity-{{ alert.severity }}">
+266-                                    <div class="d-flex w-100 justify-content-between">
+267-                                        <h6 class="mb-1">{{ alert.alert_type|replace('_', ' ')|title }}</h6>
+268-                                        <small>{{ alert.timestamp.strftime('%b %d, %H:%M') }}</small>
+269-                                    </div>
+270-                                    <p class="mb-1">{{ alert.message }}</p>
+271-                                    <div class="d-flex justify-content-between align-items-center">
+272-                                        <small class="text-muted">
+273-                                            {% if alert.severity == 'high' %}
+274-                                                <span class="text-danger">High Priority</span>
+275-                                            {% elif alert.severity == 'medium' %}
+276-                                                <span class="text-warning">Medium Priority</span>
+277-                                            {% else %}
+278-                                                <span class="text-info">Low Priority</span>
+279-                                            {% endif %}
+280-                                        </small>
+281-                                        <form method="POST" action="{{ url_for('provider.resolve_alert', alert_id=alert.id) }}">
+282-                                            <input type="hidden" name="patient_id" value="{{ patient.id }}">
+283-                                            <button type="submit" class="btn btn-sm btn-outline-success">
+284-                                                <i class="fas fa-check-circle me-1"></i>Resolve
+285-                                            </button>
+286-                                        </form>
+287-                                    </div>
+288-                                </div>
+289-                            {% endfor %}
+290-                        </div>
+291-                    {% else %}
+292-                        <div class="text-center py-4">
+293-                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+294-                            <p>No active alerts for this patient.</p>
+295-                        </div>
+296-                    {% endif %}
+297-                </div>
+298-            </div>
+299-        </div>
+300-        <div class="col-md-6">
+301-            <div class="card h-100">
+302-                <div class="card-header bg-primary text-white">
+303-                    <h5 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Connected Devices</h5>
+304-                </div>
+305-                <div class="card-body">
+306-                    {% if devices %}
+307-                        <div class="table-responsive">
+308-                            <table class="table table-hover">
+309-                                <thead>
+310-                                    <tr>
+311-                                        <th>Device</th>
+312-                                        <th>Model</th>
+313-                                        <th>Last Synced</th>
+314-                                        <th>Status</th>
+315-                                    </tr>
+316-                                </thead>
+317-                                <tbody>
+318-                                    {% for device in devices %}
+319-                                        <tr>
+320-                                            <td>{{ device.device_type|replace('_', ' ')|title }}</td>
+321-                                            <td>{{ device.manufacturer }} {{ device.model }}</td>
+322-                                            <td>
+323-                                                {% if device.last_synced %}
+324-                                                    {{ device.last_synced.strftime('%b %d, %Y %H:%M') }}
+325-                                                {% else %}
+326-                                                    Never
+327-                                                {% endif %}
+328-                                            </td>
+329-                                            <td>
+330-                                                {% if device.is_active %}
+331-                                                    <span class="badge bg-success">Active</span>
+332-                                                {% else %}
+333-                                                    <span class="badge bg-secondary">Inactive</span>
+334-                                                {% endif %}
+335-                                            </td>
+336-                                        </tr>
+337-                                    {% endfor %}
+338-                                </tbody>
+339-                            </table>
+340-                        </div>
+341-                    {% else %}
+342-                        <div class="text-center py-4">
+343-                            <i class="fas fa-mobile-alt fa-3x mb-3 text-muted"></i>
+344-                            <p>No devices connected yet.</p>
+345-                        </div>
+346-                    {% endif %}
+347-                </div>
+348-            </div>
+349-        </div>
+350-    </div>
+351-</div>
+352-
+353-<!-- Add Medication Modal -->
+354-<div class="modal fade" id="addMedicationModal" tabindex="-1" aria-labelledby="addMedicationModalLabel" aria-hidden="true">
+355-    <div class="modal-dialog">
+356-        <div class="modal-content">
+357-            <div class="modal-header bg-primary text-white">
+358-                <h5 class="modal-title" id="addMedicationModalLabel"><i class="fas fa-prescription me-2"></i>Add Medication</h5>
+359-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+360-            </div>
+361-            <div class="modal-body">
+362-                <form id="addMedicationForm" method="POST" action="{{ url_for('provider.add_medication', patient_id=patient.id) }}">
+363-                    <div class="mb-3">
+364-                        <label for="name" class="form-label">Medication Name</label>
+365-                        <input type="text" class="form-control" id="name" name="name" required>
+366-                    </div>
+367-                    <div class="mb-3">
+368-                        <label for="dosage" class="form-label">Dosage</label>
+369-                        <input type="text" class="form-control" id="dosage" name="dosage" placeholder="e.g., 500mg" required>
+370-                    </div>
+371-                    <div class="mb-3">
+372-                        <label for="frequency" class="form-label">Frequency</label>
+373-                        <input type="text" class="form-control" id="frequency" name="frequency" placeholder="e.g., Twice daily with meals" required>
+374-                    </div>
+375-                    <div class="row mb-3">
+376-                        <div class="col-md-6">
+377-                            <label for="start_date" class="form-label">Start Date</label>
+378-                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+379-                        </div>
+380-                        <div class="col-md-6">
+381-                            <label for="end_date" class="form-label">End Date (Optional)</label>
+382-                            <input type="date" class="form-control" id="end_date" name="end_date">
+383-                        </div>
+384-                    </div>
+385-                    <div class="mb-3">
+386-                        <label for="instructions" class="form-label">Special Instructions</label>
+387-                        <textarea class="form-control" id="instructions" name="instructions" rows="3" placeholder="Any special instructions for taking this medication"></textarea>
+388-                    </div>
+389-                </form>
+390-            </div>
+391-            <div class="modal-footer">
+392-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+393-                <button type="submit" form="addMedicationForm" class="btn btn-primary">
+394-                    <i class="fas fa-save me-2"></i>Save Medication
+395-                </button>
+396-            </div>
+397-        </div>
+398-    </div>
+399-</div>
+400-{% endblock %}
+401-
+402-{% block scripts %}
+403-<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+404-<script>
+405-document.addEventListener('DOMContentLoaded', function() {
+406-    // Initialize the risk gauge chart
+407-    const riskScore = {{ risk_score }};
+408-    createRiskGaugeChart('riskGaugeChart', riskScore);
+409-    
+410-    // Initialize glucose chart if data available
+411-    {% if glucose_readings %}
+412-        const glucoseReadings = {{ glucose_readings|tojson }};
+413-        createGlucoseChart('glucoseChart', glucoseReadings);
+414-    {% endif %}
+415-    
+416-    // Initialize blood pressure chart if data available
+417-    {% if bp_readings %}
+418-        const bpReadings = {{ bp_readings|tojson }};
+419-        createBloodPressureChart('bpChart', bpReadings);
+420-    {% endif %}
+421-    
+422-    // Set current date for the start date field in the add medication form
+423-    const startDateField = document.getElementById('start_date');
+424-    if (startDateField) {
+425-        const today = new Date();
+426-        const formattedDate = today.toISOString().split('T')[0];
+427-        startDateField.value = formattedDate;
+428-    }
+429-});
+430-</script>
+431-{% endblock %}

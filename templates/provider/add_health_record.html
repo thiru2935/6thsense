@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+
+{% block title %}Add Health Record - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patients') }}">Patients</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patient_detail', patient_id=patient.id) }}">{{ patient_user.get_full_name() }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patient_health_records', patient_id=patient.id) }}">Health Records</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Record</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="fas fa-file-medical me-2"></i>Add Health Record for {{ patient_user.get_full_name() }}</h3>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('provider.add_patient_health_record', patient_id=patient.id) }}" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                <div class="mb-3">
+                    <label for="record_type" class="form-label">Record Type</label>
+                    <select class="form-select" id="record_type" name="record_type" required>
+                        <option value="" selected disabled>Select a record type...</option>
+                        <option value="lab_result">Lab Result</option>
+                        <option value="clinical_note">Clinical Note</option>
+                        <option value="prescription">Prescription</option>
+                        <option value="radiology">Radiology Report</option>
+                        <option value="progress_note">Progress Note</option>
+                        <option value="consultation">Consultation Report</option>
+                        <option value="referral">Referral</option>
+                        <option value="discharge_summary">Discharge Summary</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Please select a record type.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                    <div class="invalid-feedback">
+                        Please provide a title for this record.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="content" class="form-label">Content</label>
+                    <textarea class="form-control" id="content" name="content" rows="10" required></textarea>
+                    <div class="invalid-feedback">
+                        Please provide the content for this record.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="file" class="form-label">Attachment (Optional)</label>
+                    <input type="file" class="form-control" id="file" name="file">
+                    <div class="form-text">Upload relevant documents or images. Supported formats: PDF, JPG, PNG.</div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Record
+                    </button>
+                    <a href="{{ url_for('provider.patient_health_records', patient_id=patient.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Record Type Guidelines -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Record Type Guidelines</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <h5>Clinical Records</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <h6>Clinical Note</h6>
+                            <p class="small text-muted mb-0">Document encounter details, observations, patient complaints, and treatment plans.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <h6>Progress Note</h6>
+                            <p class="small text-muted mb-0">Document patient progress, responses to treatment, and adjustments to care plans.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <h6>Consultation Report</h6>
+                            <p class="small text-muted mb-0">Document findings and recommendations from a specialist consultation.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <h6>Discharge Summary</h6>
+                            <p class="small text-muted mb-0">Summarize hospital stay, treatments, and follow-up instructions.</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Test Results & Prescriptions</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <h6>Lab Result</h6>
+                            <p class="small text-muted mb-0">Include test type, reference ranges, values, and interpretations.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <h6>Radiology Report</h6>
+                            <p class="small text-muted mb-0">Document imaging findings, impressions, and recommendations.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <h6>Prescription</h6>
+                            <p class="small text-muted mb-0">Include medication name, dosage, frequency, duration, and special instructions.</p>
+                        </li>
+                        <li class="list-group-item">
+                            <h6>Referral</h6>
+                            <p class="small text-muted mb-0">Specify referral reason, urgency, and relevant clinical information.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+
+    // Add templates for different record types
+    document.getElementById('record_type').addEventListener('change', function() {
+        const recordType = this.value;
+        const contentField = document.getElementById('content');
+        
+        // Set placeholder text based on record type
+        if (recordType === 'lab_result') {
+            contentField.value = 
+`Test Name: 
+Date Performed: 
+Reference Range: 
+Result: 
+Interpretation: 
+
+Additional Notes:`;
+        } else if (recordType === 'clinical_note') {
+            contentField.value = 
+`Subjective:
+- Chief Complaint: 
+- History of Present Illness: 
+- Past Medical History: 
+- Medications: 
+- Allergies: 
+
+Objective:
+- Vital Signs: 
+- Physical Examination: 
+
+Assessment:
+
+Plan:`;
+        } else if (recordType === 'prescription') {
+            contentField.value = 
+`Medication: 
+Dosage: 
+Route: 
+Frequency: 
+Duration: 
+Quantity: 
+Refills: 
+
+Special Instructions:
+
+Indication:`;
+        } else {
+            contentField.value = '';
+        }
+    });
+</script>
+{% endblock %}

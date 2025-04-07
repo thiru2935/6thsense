@@ -1,0 +1,232 @@
+{% extends "layout.html" %}
+
+{% block title %}Book Test Appointment - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('patient.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('patient.test_appointments') }}">Test Appointments</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Book Test</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Book Diabetes Test Appointment</h3>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('patient.book_test') }}" method="post" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="test_type" class="form-label">Test Type</label>
+                            <select class="form-select" id="test_type" name="test_type" required>
+                                <option value="" selected disabled>Select a test type...</option>
+                                <option value="HbA1c (Glycated Hemoglobin)">HbA1c (Glycated Hemoglobin)</option>
+                                <option value="Fasting Plasma Glucose">Fasting Plasma Glucose</option>
+                                <option value="Oral Glucose Tolerance Test">Oral Glucose Tolerance Test (OGTT)</option>
+                                <option value="Random Plasma Glucose">Random Plasma Glucose</option>
+                                <option value="C-Peptide Test">C-Peptide Test</option>
+                                <option value="Urine Microalbumin">Urine Microalbumin</option>
+                                <option value="Lipid Profile">Lipid Profile</option>
+                                <option value="Comprehensive Diabetic Panel">Comprehensive Diabetic Panel</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a test type.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="scheduled_date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" required min="{{ now.strftime('%Y-%m-%d') }}">
+                            <div class="invalid-feedback">
+                                Please select a valid date.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="scheduled_time" class="form-label">Time</label>
+                            <select class="form-select" id="scheduled_time" name="scheduled_time" required>
+                                <option value="" selected disabled>Select a time slot...</option>
+                                <option value="08:00">8:00 AM</option>
+                                <option value="08:30">8:30 AM</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="09:30">9:30 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="10:30">10:30 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="11:30">11:30 AM</option>
+                                <option value="13:00">1:00 PM</option>
+                                <option value="13:30">1:30 PM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="14:30">2:30 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="15:30">3:30 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a time slot.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Test Location</label>
+                            <select class="form-select" id="location" name="location" required>
+                                <option value="" selected disabled>Select a location...</option>
+                                <option value="Main Hospital Laboratory - 123 Main St">Main Hospital Laboratory - 123 Main St</option>
+                                <option value="Downtown Clinic - 456 Center Ave">Downtown Clinic - 456 Center Ave</option>
+                                <option value="Westside Medical Center - 789 West Blvd">Westside Medical Center - 789 West Blvd</option>
+                                <option value="Northside Diagnostic Center - 101 North Rd">Northside Diagnostic Center - 101 North Rd</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a location.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Special Instructions or Notes (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Add any special requirements or notes for the lab..."></textarea>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="acknowledgment" required>
+                            <label class="form-check-label" for="acknowledgment">
+                                I understand that I need to follow the preparation instructions for my selected test.
+                            </label>
+                            <div class="invalid-feedback">
+                                You must acknowledge the test preparation requirements.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-calendar-check me-2"></i>Book Appointment
+                            </button>
+                            <a href="{{ url_for('patient.test_appointments') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Test Information</h4>
+                </div>
+                <div class="card-body">
+                    <div id="testInfo">
+                        <p>Select a test type to see preparation instructions.</p>
+                    </div>
+
+                    <!-- Test info templates -->
+                    <div id="testInfoTemplates" style="display: none;">
+                        <div id="hba1c-info">
+                            <h5>HbA1c Test</h5>
+                            <p>Measures your average blood sugar level over the past 2-3 months.</p>
+                            <h6>Preparation:</h6>
+                            <ul>
+                                <li>No fasting required</li>
+                                <li>Continue medications as usual</li>
+                                <li>Test takes about 5 minutes</li>
+                            </ul>
+                        </div>
+
+                        <div id="fasting-glucose-info">
+                            <h5>Fasting Plasma Glucose</h5>
+                            <p>Measures your blood sugar after an overnight fast.</p>
+                            <h6>Preparation:</h6>
+                            <ul>
+                                <li>Fast for 8 hours before the test</li>
+                                <li>Water is allowed</li>
+                                <li>Schedule your appointment in the morning</li>
+                                <li>Consult with your doctor about morning medications</li>
+                            </ul>
+                        </div>
+
+                        <div id="ogtt-info">
+                            <h5>Oral Glucose Tolerance Test</h5>
+                            <p>Measures how your body processes glucose over time.</p>
+                            <h6>Preparation:</h6>
+                            <ul>
+                                <li>Fast for 8-12 hours before the test</li>
+                                <li>Test takes 2-3 hours to complete</li>
+                                <li>You'll drink a glucose solution</li>
+                                <li>Multiple blood samples will be taken</li>
+                                <li>Bring something to pass the time</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h4 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Location Map</h4>
+                </div>
+                <div class="card-body">
+                    <div id="locationMap" class="text-center">
+                        <p>Select a location to see the map.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+
+    // Update test information when test type changes
+    document.getElementById('test_type').addEventListener('change', function() {
+        const testType = this.value;
+        const testInfoDiv = document.getElementById('testInfo');
+        
+        // Clear current content
+        testInfoDiv.innerHTML = '';
+        
+        // Add new content based on selection
+        if (testType.includes('HbA1c')) {
+            testInfoDiv.innerHTML = document.getElementById('hba1c-info').innerHTML;
+        } else if (testType.includes('Fasting Plasma')) {
+            testInfoDiv.innerHTML = document.getElementById('fasting-glucose-info').innerHTML;
+        } else if (testType.includes('Oral Glucose')) {
+            testInfoDiv.innerHTML = document.getElementById('ogtt-info').innerHTML;
+        } else {
+            testInfoDiv.innerHTML = '<p>Please select a test type to see preparation instructions.</p>';
+        }
+    });
+
+    // Update location map when location changes
+    document.getElementById('location').addEventListener('change', function() {
+        const location = this.value;
+        const mapDiv = document.getElementById('locationMap');
+        
+        if (location) {
+            // In a real app, this would show an actual map
+            mapDiv.innerHTML = `<div class="alert alert-info">Map for ${location} would be displayed here.</div>`;
+        } else {
+            mapDiv.innerHTML = '<p>Select a location to see the map.</p>';
+        }
+    });
+</script>
+{% endblock %}

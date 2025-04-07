@@ -1,0 +1,139 @@
+{% extends "layout.html" %}
+
+{% block title %}Patient Health Record - HealthSync{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patients') }}">Patients</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patient_detail', patient_id=patient.id) }}">{{ patient_user.get_full_name() }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('provider.patient_health_records', patient_id=patient.id) }}">Health Records</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ record.title }}</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">{{ record.title }}</h3>
+                <span class="badge bg-light text-dark">{{ record.record_type|replace('_', ' ')|title }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <p><strong>Patient:</strong> {{ patient_user.get_full_name() }}</p>
+                    <p><strong>Created by:</strong> Dr. {{ record.provider.get_full_name() }}</p>
+                    <p><strong>Date:</strong> {{ record.recorded_at.strftime('%B %d, %Y') }}</p>
+                </div>
+                {% if record.file_path %}
+                <div class="col-md-6 text-md-end">
+                    <a href="{{ url_for('provider.download_patient_record_file', patient_id=patient.id, record_id=record.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-download me-1"></i> Download Attachment
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Record Content</h5>
+                    <div class="record-content">
+                        {{ record.content|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Information Summary -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0"><i class="fas fa-user me-2"></i>Patient Summary</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <h5>Demographics</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th scope="row">Age</th>
+                            <td>
+                                {% if patient.date_of_birth %}
+                                    {{ ((now - patient.date_of_birth).days / 365)|int }} years
+                                {% else %}
+                                    Not specified
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Gender</th>
+                            <td>{{ patient.gender|title if patient.gender else 'Not specified' }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Diagnosis</th>
+                            <td>{{ patient.diagnosis or 'No diagnosis' }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <h5>Recent Readings</h5>
+                    {% if recent_readings %}
+                        <table class="table table-sm">
+                            {% for reading in recent_readings %}
+                                <tr>
+                                    <th scope="row">{{ reading.reading_type|title }}</th>
+                                    <td>
+                                        {{ reading.value }} {{ reading.unit }}
+                                        {% if reading.is_abnormal %}
+                                            <span class="badge bg-warning">Abnormal</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% else %}
+                        <p class="text-muted">No recent readings available</p>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-4">
+                    <h5>Current Medications</h5>
+                    {% if medications %}
+                        <ul class="list-group list-group-flush">
+                            {% for med in medications %}
+                                <li class="list-group-item ps-0 border-0">
+                                    <strong>{{ med.name }}</strong><br>
+                                    <small class="text-muted">{{ med.dosage }}, {{ med.frequency }}</small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No current medications</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="{{ url_for('provider.patient_health_records', patient_id=patient.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Records
+        </a>
+        {% if is_owner %}
+            <a href="#" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-2"></i>Edit Record
+            </a>
+        {% endif %}
+        <a href="{{ url_for('provider.add_patient_health_record', patient_id=patient.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Add New Record
+        </a>
+    </div>
+</div>
+{% endblock %}

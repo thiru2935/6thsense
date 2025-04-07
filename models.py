@@ -182,3 +182,45 @@ class ChatMessage(db.Model):
     sender_type = db.Column(db.String(20), nullable=False)  # user or bot
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class HealthRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    record_type = db.Column(db.String(50), nullable=False)  # lab_result, clinical_note, prescription, radiology, etc.
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    recorded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    file_path = db.Column(db.String(255))  # Optional path to attached file
+    
+    # Relationships
+    patient = db.relationship('PatientProfile', backref=db.backref('health_records', cascade='all, delete-orphan'))
+    provider = db.relationship('User', backref='recorded_health_records')
+    consents = db.relationship('RecordConsent', backref='health_record', cascade='all, delete-orphan')
+    
+class RecordConsent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    record_id = db.Column(db.Integer, db.ForeignKey('health_record.id'), nullable=False)
+    provider_id = db.Column(db.Integer, db.ForeignKey('provider_profile.id'), nullable=False)
+    granted_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Patient who granted consent
+    granted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    provider = db.relationship('ProviderProfile', backref='record_consents')
+    patient = db.relationship('User', backref='granted_consents')
+
+class TestAppointment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    test_type = db.Column(db.String(100), nullable=False)  # e.g., HbA1c, Glucose Tolerance, etc.
+    scheduled_date = db.Column(db.DateTime, nullable=False)
+    location = db.Column(db.String(200))
+    notes = db.Column(db.Text)
+    is_confirmed = db.Column(db.Boolean, default=False)
+    is_completed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    patient = db.relationship('PatientProfile', backref=db.backref('test_appointments', cascade='all, delete-orphan'))

@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from datetime import datetime, timedelta
 
 from app import db
-from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert
+from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile
 from services.prediction import predict_risk_score
 from services.device_integration import sync_devices
 from services.alerts import check_readings_for_alerts
@@ -171,3 +171,176 @@ def alerts():
     alerts = query.order_by(Alert.timestamp.desc()).all()
     
     return render_template('patient/alerts.html', patient=patient, alerts=alerts, show_resolved=show_resolved)
+
+@patient_bp.route('/health-records')
+@login_required
+def health_records():
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    record_type = request.args.get('type', 'all')
+    
+    query = HealthRecord.query.filter_by(patient_id=patient.id)
+    
+    if record_type != 'all':
+        query = query.filter_by(record_type=record_type)
+    
+    records = query.order_by(HealthRecord.recorded_at.desc()).all()
+    
+    # Get providers that can be granted consent
+    associated_providers = [assoc.provider for assoc in patient.providers]
+    
+    return render_template('patient/health_records.html', 
+                          patient=patient, 
+                          records=records, 
+                          record_type=record_type,
+                          providers=associated_providers)
+
+@patient_bp.route('/health-records/<int:record_id>')
+@login_required
+def view_health_record(record_id):
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    record = HealthRecord.query.get_or_404(record_id)
+    
+    if record.patient_id != patient.id:
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('patient.health_records'))
+    
+    # Get consents for this record
+    consents = RecordConsent.query.filter_by(record_id=record_id, is_active=True).all()
+    
+    # Get providers that aren't already granted consent
+    granted_provider_ids = [consent.provider_id for consent in consents]
+    associated_providers = [assoc.provider for assoc in patient.providers if assoc.provider_id not in granted_provider_ids]
+    
+    return render_template('patient/view_health_record.html', 
+                          patient=patient, 
+                          record=record,
+                          consents=consents,
+                          available_providers=associated_providers)
+
+@patient_bp.route('/health-records/<int:record_id>/grant-consent', methods=['POST'])
+@login_required
+def grant_record_consent(record_id):
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    record = HealthRecord.query.get_or_404(record_id)
+    
+    if record.patient_id != patient.id:
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('patient.health_records'))
+    
+    provider_id = request.form.get('provider_id')
+    if not provider_id:
+        flash('Provider selection is required', 'danger')
+        return redirect(url_for('patient.view_health_record', record_id=record_id))
+    
+    # Calculate expiration date (default 30 days)
+    duration_days = int(request.form.get('duration', 30))
+    expires_at = datetime.utcnow() + timedelta(days=duration_days)
+    
+    consent = RecordConsent(
+        record_id=record_id,
+        provider_id=provider_id,
+        granted_by=current_user.id,
+        expires_at=expires_at,
+        is_active=True
+    )
+    
+    db.session.add(consent)
+    db.session.commit()
+    
+    flash('Access granted to provider', 'success')
+    return redirect(url_for('patient.view_health_record', record_id=record_id))
+
+@patient_bp.route('/health-records/<int:record_id>/revoke-consent/<int:consent_id>', methods=['POST'])
+@login_required
+def revoke_record_consent(record_id, consent_id):
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    record = HealthRecord.query.get_or_404(record_id)
+    consent = RecordConsent.query.get_or_404(consent_id)
+    
+    if record.patient_id != patient.id or consent.record_id != record_id:
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('patient.health_records'))
+    
+    consent.is_active = False
+    db.session.commit()
+    
+    flash('Provider access revoked', 'success')
+    return redirect(url_for('patient.view_health_record', record_id=record_id))
+
+@patient_bp.route('/test-appointments')
+@login_required
+def test_appointments():
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    show_past = request.args.get('show_past', 'false') == 'true'
+    
+    query = TestAppointment.query.filter_by(patient_id=patient.id)
+    
+    if not show_past:
+        query = query.filter(TestAppointment.scheduled_date >= datetime.utcnow())
+        
+    appointments = query.order_by(TestAppointment.scheduled_date).all()
+    
+    return render_template('patient/test_appointments.html', 
+                          patient=patient, 
+                          appointments=appointments, 
+                          show_past=show_past)
+
+@patient_bp.route('/book-test', methods=['GET', 'POST'])
+@login_required
+def book_test():
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if request.method == 'POST':
+        # Get form data
+        test_type = request.form.get('test_type')
+        date_str = request.form.get('date')
+        time_str = request.form.get('time')
+        location = request.form.get('location')
+        notes = request.form.get('notes', '')
+        
+        # Validate required fields
+        if not all([test_type, date_str, time_str, location]):
+            flash('All fields are required', 'danger')
+            return redirect(url_for('patient.book_test'))
+        
+        # Create datetime from date and time
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            time_obj = datetime.strptime(time_str, '%H:%M').time()
+            scheduled_date = datetime.combine(date_obj.date(), time_obj)
+        except ValueError:
+            flash('Invalid date or time format', 'danger')
+            return redirect(url_for('patient.book_test'))
+        
+        # Create new appointment
+        appointment = TestAppointment(
+            patient_id=patient.id,
+            test_type=test_type,
+            scheduled_date=scheduled_date,
+            location=location,
+            notes=notes
+        )
+        
+        db.session.add(appointment)
+        db.session.commit()
+        
+        flash('Appointment booked successfully', 'success')
+        return redirect(url_for('patient.test_appointments'))
+    
+    # GET request - show booking form
+    # Define test types
+    test_types = [
+        'HbA1c Test',
+        'Fasting Blood Glucose',
+        'Oral Glucose Tolerance Test',
+        'Random Blood Glucose Test',
+        'Kidney Function Test',
+        'Lipid Profile',
+        'Blood Pressure Check',
+        'Eye Examination',
+        'Foot Examination'
+    ]
+    
+    return render_template('patient/book_test.html', 
+                          patient=patient, 
+                          test_types=test_types)
