@@ -1,0 +1,223 @@
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Init the risk gauge chart
+    const riskScore = {{ risk_score or 0 }};
+    createRiskGaugeChart('riskGaugeChart', riskScore);
+    
+    // Init glucose chart if data available
+    {% if glucose_readings %}
+        const glucoseReadings = {{ glucose_readings|tojson }};
+        createGlucoseChart('glucoseChart', glucoseReadings);
+    {% endif %}
+    
+    // Init blood pressure chart if data available
+    {% if bp_readings %}
+        const bpReadings = {{ bp_readings|tojson }};
+        createBloodPressureChart('bpChart', bpReadings);
+    {% endif %}
+    
+    // Health Matrix Charts
+    
+    // Reading Types Distribution
+    {% if reading_types_dict %}
+        const readingTypes = {
+            labels: [{% for key, value in reading_types_dict.items() %}'{{ key|replace('_', ' ')|title }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            data: [{% for key, value in reading_types_dict.items() %}{{ value }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+        
+        new Chart(document.getElementById('readingTypesChart'), {
+            type: 'doughnut',
+            data: {
+                labels: readingTypes.labels,
+                datasets: [{
+                    data: readingTypes.data,
+                    backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#8E44AD', '#3498DB', '#E67E22', '#16A085'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Health Records by Type
+    {% if record_types_dict %}
+        const recordTypes = {
+            labels: [{% for key, value in record_types_dict.items() %}'{{ key|replace('_', ' ')|title }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+            data: [{% for key, value in record_types_dict.items() %}{{ value }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+        
+        new Chart(document.getElementById('recordTypesChart'), {
+            type: 'pie',
+            data: {
+                labels: recordTypes.labels,
+                datasets: [{
+                    data: recordTypes.data,
+                    backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#8E44AD', '#3498DB', '#E67E22', '#16A085'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Alert Status
+    {% if alert_statuses_dict %}
+        const alertStatuses = {
+            labels: ['Resolved', 'Active'],
+            data: [
+                {{ alert_statuses_dict.get(true, 0) }}, 
+                {{ alert_statuses_dict.get(false, 0) }}
+            ]
+        };
+        
+        new Chart(document.getElementById('alertStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: alertStatuses.labels,
+                datasets: [{
+                    data: alertStatuses.data,
+                    backgroundColor: ['#34A853', '#EA4335'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Medication Adherence Chart
+    {% if medication_logs %}
+        const medicationData = {
+            taken: 0,
+            missed: 0
+        };
+        
+        {% for log, med in medication_logs %}
+            if ({{ log.was_taken|tojson }}) {
+                medicationData.taken++;
+            } else {
+                medicationData.missed++;
+            }
+        {% endfor %}
+        
+        new Chart(document.getElementById('medicationAdherenceChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Taken', 'Missed'],
+                datasets: [{
+                    label: 'Medication Adherence',
+                    data: [medicationData.taken, medicationData.missed],
+                    backgroundColor: ['#34A853', '#EA4335'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Health Records Timeline
+    {% if health_records %}
+        const healthRecordsData = {
+            labels: [],
+            datasets: [{
+                label: 'Health Records',
+                data: [],
+                backgroundColor: '#4285F4',
+                borderColor: '#4285F4',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.1
+            }]
+        };
+        
+        // Group records by month
+        const recordsByMonth = {};
+        
+        {% for record in health_records %}
+            const month = '{{ record.recorded_at.strftime('%b %Y') }}';
+            if (!recordsByMonth[month]) {
+                recordsByMonth[month] = 0;
+            }
+            recordsByMonth[month]++;
+        {% endfor %}
+        
+        // Convert to arrays for chart
+        Object.keys(recordsByMonth).sort().forEach(month => {
+            healthRecordsData.labels.push(month);
+            healthRecordsData.datasets[0].data.push(recordsByMonth[month]);
+        });
+        
+        new Chart(document.getElementById('healthRecordsTimelineChart'), {
+            type: 'line',
+            data: healthRecordsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    {% endif %}
+});
+</script>
+{% endblock %}

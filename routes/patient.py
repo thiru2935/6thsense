@@ -34,16 +34,71 @@ def dashboard():
     # Calculate risk score
     risk_score = predict_risk_score(patient.id)
     
-    # Get reading data for charts
+    # Get reading data for charts - last 30 days of readings
+    from datetime import datetime, timedelta
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    # Get glucose readings
     glucose_readings = HealthReading.query.filter_by(
         patient_id=patient.id, 
         reading_type='blood_glucose'
-    ).order_by(HealthReading.timestamp.desc()).limit(30).all()
+    ).filter(HealthReading.timestamp >= thirty_days_ago).order_by(HealthReading.timestamp).all()
     
+    # Get blood pressure readings
     bp_readings = HealthReading.query.filter_by(
         patient_id=patient.id, 
         reading_type='blood_pressure'
-    ).order_by(HealthReading.timestamp.desc()).limit(30).all()
+    ).filter(HealthReading.timestamp >= thirty_days_ago).order_by(HealthReading.timestamp).all()
+    
+    # Get health records for charts
+    health_records = HealthRecord.query.filter_by(
+        patient_id=patient.id
+    ).order_by(HealthRecord.recorded_at.desc()).limit(20).all()
+    
+    # Get data about medications intake
+    medication_logs = db.session.query(
+        MedicationLog, Medication
+    ).join(
+        Medication, MedicationLog.medication_id == Medication.id
+    ).filter(
+        Medication.patient_id == patient.id
+    ).filter(
+        MedicationLog.taken_at >= thirty_days_ago
+    ).order_by(MedicationLog.taken_at).all()
+    
+    # Get data for device readings by type
+    device_readings = db.session.query(
+        HealthReading.reading_type, 
+        db.func.count(HealthReading.id).label('count')
+    ).filter(
+        HealthReading.patient_id == patient.id
+    ).filter(
+        HealthReading.timestamp >= thirty_days_ago
+    ).group_by(HealthReading.reading_type).all()
+    
+    reading_types_dict = {r[0]: r[1] for r in device_readings}
+    
+    # Get health record types for pie chart
+    record_types = db.session.query(
+        HealthRecord.record_type, 
+        db.func.count(HealthRecord.id).label('count')
+    ).filter(
+        HealthRecord.patient_id == patient.id
+    ).group_by(HealthRecord.record_type).all()
+    
+    record_types_dict = {r[0]: r[1] for r in record_types}
+    
+    # Get resolved vs unresolved alerts
+    alert_statuses = db.session.query(
+        Alert.is_resolved,
+        db.func.count(Alert.id).label('count')
+    ).filter(
+        Alert.patient_id == patient.id
+    ).filter(
+        Alert.timestamp >= thirty_days_ago
+    ).group_by(Alert.is_resolved).all()
+    
+    alert_statuses_dict = {bool(r[0]): r[1] for r in alert_statuses}
     
     return render_template('patient/dashboard.html',
                            patient=patient,
@@ -52,7 +107,12 @@ def dashboard():
                            alerts=alerts,
                            risk_score=risk_score,
                            glucose_readings=glucose_readings,
-                           bp_readings=bp_readings)
+                           bp_readings=bp_readings,
+                           health_records=health_records,
+                           medication_logs=medication_logs,
+                           reading_types_dict=reading_types_dict,
+                           record_types_dict=record_types_dict,
+                           alert_statuses_dict=alert_statuses_dict)
 
 @patient_bp.route('/devices')
 @login_required

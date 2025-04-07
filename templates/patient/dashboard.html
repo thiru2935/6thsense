@@ -7,9 +7,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
         <div>
-            <a href="{{ url_for('patient.sync_devices') }}" class="btn btn-primary" data-bs-toggle="tooltip" title="Sync all your connected devices">
-                <i class="fas fa-sync me-2"></i>Sync Devices
-            </a>
+            <form action="{{ url_for('patient.sync_patient_devices') }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" title="Sync all your connected devices">
+                    <i class="fas fa-sync me-2"></i>Sync Devices
+                </button>
+            </form>
         </div>
     </div>
 
@@ -214,6 +216,131 @@
         </div>
     </div>
 
+    </div>
+
+    <!-- Health Matrix - Charts and Analytics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card dashboard-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Health Matrix</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Your comprehensive health analytics based on health records and wearable device data.</p>
+                    
+                    <div class="row">
+                        <!-- Reading Types Distribution -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Readings by Type</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if reading_types_dict %}
+                                        <div class="chart-container" style="height: 220px;">
+                                            <canvas id="readingTypesChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-chart-pie fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No reading data available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Health Records Distribution -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Health Records by Type</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if record_types_dict %}
+                                        <div class="chart-container" style="height: 220px;">
+                                            <canvas id="recordTypesChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-chart-pie fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No health records available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alerts Distribution -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Alert Status</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if alert_statuses_dict %}
+                                        <div class="chart-container" style="height: 220px;">
+                                            <canvas id="alertStatusChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-chart-pie fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No alert data available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Medication Adherence -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Medication Adherence</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if medication_logs %}
+                                        <div class="chart-container">
+                                            <canvas id="medicationAdherenceChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-pills fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No medication logs available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Health Records Timeline -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Health Records Timeline</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if health_records %}
+                                        <div class="chart-container">
+                                            <canvas id="healthRecordsTimelineChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-file-medical-alt fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No health records available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Readings -->
     <div class="row">
         <div class="col-12">
@@ -301,6 +428,207 @@ document.addEventListener('DOMContentLoaded', function() {
     {% if bp_readings %}
         const bpReadings = {{ bp_readings|tojson }};
         createBloodPressureChart('bpChart', bpReadings);
+    {% endif %}
+    
+    // Health Matrix Charts
+    
+    // Reading Types Distribution
+    {% if reading_types_dict %}
+        const readingTypes = {
+            labels: [{% for key, value in reading_types_dict.items() %}'{{ key|replace('_', ' ')|title }'{% if not loop.last %}, {% endif %}{% endfor %}],
+            data: [{% for key, value in reading_types_dict.items() %}{{ value }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+        
+        new Chart(document.getElementById('readingTypesChart'), {
+            type: 'doughnut',
+            data: {
+                labels: readingTypes.labels,
+                datasets: [{
+                    data: readingTypes.data,
+                    backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#8E44AD', '#3498DB', '#E67E22', '#16A085'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Health Records by Type
+    {% if record_types_dict %}
+        const recordTypes = {
+            labels: [{% for key, value in record_types_dict.items() %}'{{ key|replace('_', ' ')|title }'{% if not loop.last %}, {% endif %}{% endfor %}],
+            data: [{% for key, value in record_types_dict.items() %}{{ value }}{% if not loop.last %}, {% endif %}{% endfor %}]
+        };
+        
+        new Chart(document.getElementById('recordTypesChart'), {
+            type: 'pie',
+            data: {
+                labels: recordTypes.labels,
+                datasets: [{
+                    data: recordTypes.data,
+                    backgroundColor: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#8E44AD', '#3498DB', '#E67E22', '#16A085'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Alert Status
+    {% if alert_statuses_dict %}
+        const alertStatuses = {
+            labels: ['Resolved', 'Active'],
+            data: [
+                {{ alert_statuses_dict.get(true, 0) }}, 
+                {{ alert_statuses_dict.get(false, 0) }}
+            ]
+        };
+        
+        new Chart(document.getElementById('alertStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: alertStatuses.labels,
+                datasets: [{
+                    data: alertStatuses.data,
+                    backgroundColor: ['#34A853', '#EA4335'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Medication Adherence Chart
+    {% if medication_logs %}
+        const medicationData = {
+            taken: 0,
+            missed: 0
+        };
+        
+        {% for log, med in medication_logs %}
+            if ({{ log.was_taken|tojson }}) {
+                medicationData.taken++;
+            } else {
+                medicationData.missed++;
+            }
+        {% endfor %}
+        
+        new Chart(document.getElementById('medicationAdherenceChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Taken', 'Missed'],
+                datasets: [{
+                    label: 'Medication Adherence',
+                    data: [medicationData.taken, medicationData.missed],
+                    backgroundColor: ['#34A853', '#EA4335'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    {% endif %}
+    
+    // Health Records Timeline
+    {% if health_records %}
+        const healthRecordsData = {
+            labels: [],
+            datasets: [{
+                label: 'Health Records',
+                data: [],
+                backgroundColor: '#4285F4',
+                borderColor: '#4285F4',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.1
+            }]
+        };
+        
+        // Group records by month
+        const recordsByMonth = {};
+        
+        {% for record in health_records %}
+            const month = '{{ record.recorded_at.strftime('%b %Y') }};
+            if (!recordsByMonth[month]) {
+                recordsByMonth[month] = 0;
+            }
+            recordsByMonth[month]++;
+        {% endfor %}
+        
+        // Convert to arrays for chart
+        Object.keys(recordsByMonth).sort().forEach(month => {
+            healthRecordsData.labels.push(month);
+            healthRecordsData.datasets[0].data.push(recordsByMonth[month]);
+        });
+        
+        new Chart(document.getElementById('healthRecordsTimelineChart'), {
+            type: 'line',
+            data: healthRecordsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
     {% endif %}
 });
 </script>

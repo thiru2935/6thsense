@@ -1,0 +1,122 @@
+    <!-- Health Matrix - Charts and Analytics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card dashboard-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Health Matrix</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Your comprehensive health analytics based on health records and wearable device data.</p>
+                    
+                    <div class="row">
+                        <!-- Reading Types Distribution -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Readings by Type</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if reading_types_dict %}
+                                        <div class="chart-container" style="height: 220px;">
+                                            <canvas id="readingTypesChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-chart-pie fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No reading data available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Health Records Distribution -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Health Records by Type</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if record_types_dict %}
+                                        <div class="chart-container" style="height: 220px;">
+                                            <canvas id="recordTypesChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-chart-pie fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No health records available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Alerts Distribution -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Alert Status</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if alert_statuses_dict %}
+                                        <div class="chart-container" style="height: 220px;">
+                                            <canvas id="alertStatusChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-chart-pie fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No alert data available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Medication Adherence -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Medication Adherence</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if medication_logs %}
+                                        <div class="chart-container">
+                                            <canvas id="medicationAdherenceChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-pills fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No medication logs available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Health Records Timeline -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">Health Records Timeline</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if health_records %}
+                                        <div class="chart-container">
+                                            <canvas id="healthRecordsTimelineChart"></canvas>
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-4">
+                                            <i class="fas fa-file-medical-alt fa-2x mb-2 text-muted"></i>
+                                            <p class="small">No health records available</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
