@@ -26,16 +26,27 @@ def dashboard():
     associations = ProviderPatientAssociation.query.filter_by(provider_id=provider.id).all()
     patient_ids = [assoc.patient_id for assoc in associations]
     
-    # Get patients with high risk scores
+    # Get all patients data for display
+    patients = []
     high_risk_patients = []
+    
     for patient_id in patient_ids:
         patient = PatientProfile.query.get(patient_id)
+        user = User.query.get(patient.user_id)
         risk_score = predict_risk_score(patient_id)
         
+        # Add to all patients list
+        patients.append({
+            'patient': patient,
+            'user': user,
+            'risk_score': risk_score
+        })
+        
+        # Check if high risk
         if risk_score > 70:  # Arbitrary threshold for high risk
             high_risk_patients.append({
                 'patient': patient,
-                'user': User.query.get(patient.user_id),
+                'user': user,
                 'risk_score': risk_score
             })
     
@@ -54,6 +65,7 @@ def dashboard():
     
     return render_template('provider/dashboard.html',
                            provider=provider,
+                           patients=patients,
                            high_risk_patients=high_risk_patients,
                            alerts=recent_alerts,
                            patient_count=len(patient_ids),
