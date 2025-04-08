@@ -434,8 +434,8 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
         # Generate prompt
         prompt = generate_prediction_prompt(health_data, condition)
         
-        # Get Gemini model
-        model = genai.GenerativeModel('gemini-pro')
+        # Get Gemini model - using gemini-1.0-pro (updated model name)
+        model = genai.GenerativeModel('gemini-1.0-pro')
         
         # Generate response
         response = model.generate_content(prompt)

@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import current_user, login_required
 from datetime import datetime, timedelta
@@ -445,11 +446,24 @@ def ai_prediction(condition):
     use_cached = False
     if recent_prediction and (datetime.utcnow() - recent_prediction.timestamp).days < 7:
         use_cached = True
+        
+        # Parse JSON strings from database if available
+        try:
+            key_factors = json.loads(recent_prediction.key_factors) if recent_prediction.key_factors else []
+        except:
+            key_factors = []
+            
+        try:
+            recommendations = json.loads(recent_prediction.recommendations) if recent_prediction.recommendations else []
+        except:
+            recommendations = []
+            
         prediction_result = {
-            'success': True,
             'risk_score': recent_prediction.prediction_value,
-            'key_factors': recent_prediction.notes.split('Key factors: ')[1].split('...')[0].split(', ') if 'Key factors: ' in recent_prediction.notes else [],
-            'assessment': recent_prediction.notes.split('Assessment: ')[1].split('...')[0] if 'Assessment: ' in recent_prediction.notes else 'No detailed assessment available.'
+            'key_factors': key_factors,
+            'recommendations': recommendations,
+            'assessment': recent_prediction.assessment or 'No detailed assessment available.',
+            'condition': recent_prediction.condition
         }
     else:
         # Generate a new prediction
@@ -459,9 +473,13 @@ def ai_prediction(condition):
             flash(f'Error generating prediction: {str(e)}', 'danger')
             return redirect(url_for('patient.dashboard'))
     
-    # Check if API key is missing
-    if not prediction_result['success'] and 'API_KEY' in prediction_result.get('message', ''):
-        flash('Gemini API key is required for AI predictions. Please contact your administrator.', 'warning')
+    # Check if there was an error with the prediction
+    if 'error' in prediction_result:
+        error_message = prediction_result['error']
+        if 'API_KEY' in error_message:
+            flash('Gemini API key is required for AI predictions. Please contact your administrator.', 'warning')
+        else:
+            flash(f'Error generating prediction: {error_message}', 'danger')
         return redirect(url_for('patient.dashboard'))
     
     return render_template('patient/ai_prediction.html',
