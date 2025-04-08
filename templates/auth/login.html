@@ -17,7 +17,6 @@
                 </div>
                 <div class="auth-card-body">
                     <form method="POST" action="{{ url_for('auth.login') }}" class="needs-validation" novalidate>
-                        {{ form.hidden_tag() }}
                         <div class="mb-4">
                             <label for="email" class="form-label">Email Address</label>
                             <div class="input-group auth-input-group">
