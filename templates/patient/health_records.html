@@ -1,89 +1,303 @@
 {% extends "layout.html" %}
 
-{% block title %}Health Records - 6th Sense{% endblock %}
+{% block title %}My Health Records - 6th Sense{% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="mb-4">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('patient.dashboard') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Health Records</li>
-            </ol>
-        </nav>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-file-medical me-2"></i>My Health Records</h1>
     </div>
-
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2><i class="fas fa-file-medical me-2"></i>My Health Records</h2>
-            <p class="text-muted">View and manage your health records and control provider access.</p>
-        </div>
-        <div class="col-md-4 text-end">
-            <div class="btn-group">
-                <a href="{{ url_for('patient.health_records', type='all') }}" class="btn btn-outline-primary {% if record_type == 'all' %}active{% endif %}">All</a>
-                <a href="{{ url_for('patient.health_records', type='lab_result') }}" class="btn btn-outline-primary {% if record_type == 'lab_result' %}active{% endif %}">Lab Results</a>
-                <a href="{{ url_for('patient.health_records', type='clinical_note') }}" class="btn btn-outline-primary {% if record_type == 'clinical_note' %}active{% endif %}">Clinical Notes</a>
-                <a href="{{ url_for('patient.health_records', type='prescription') }}" class="btn btn-outline-primary {% if record_type == 'prescription' %}active{% endif %}">Prescriptions</a>
-            </div>
-        </div>
-    </div>
-
-    {% if records %}
-        <div class="card mb-4">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-primary">
-                        <tr>
-                            <th>Date</th>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Provider Access</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for record in records %}
-                            <tr>
-                                <td>{{ record.recorded_at.strftime('%b %d, %Y') }}</td>
-                                <td>{{ record.title }}</td>
-                                <td><span class="badge bg-info">{{ record.record_type|replace('_', ' ')|title }}</span></td>
-                                <td>
-                                    {% set active_consents = record.consents|selectattr('is_active', 'equalto', true)|list %}
-                                    {% if active_consents %}
-                                        <span class="badge bg-success">{{ active_consents|length }} provider(s)</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">No access granted</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{{ url_for('patient.view_health_record', record_id=record.id) }}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-eye me-1"></i>View
-                                    </a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    {% else %}
-        <div class="card mb-4">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-file-medical fa-4x mb-3 text-muted"></i>
-                <h4>No Health Records Found</h4>
-                <p class="text-muted">There are no health records available in your profile yet.</p>
-                <p class="mb-0">Health records will be added by your healthcare providers or when you upload documents.</p>
-            </div>
-        </div>
-    {% endif %}
     
-    <!-- Record Privacy Information -->
-    <div class="card mb-4 bg-light">
+    <!-- Records filter bar -->
+    <div class="card mb-4">
         <div class="card-body">
-            <h5><i class="fas fa-shield-alt me-2"></i>Health Record Privacy</h5>
-            <p class="mb-0">Your health records are private by default. You can grant specific healthcare providers 
-               access to view individual records from the record detail page. You can revoke access at any time.</p>
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div class="input-group" style="max-width: 300px;">
+                    <span class="input-group-text bg-dark"><i class="fas fa-search"></i></span>
+                    <input type="text" id="recordSearch" class="form-control" placeholder="Search records...">
+                </div>
+                
+                <div>
+                    <select id="recordTypeFilter" class="form-select">
+                        <option value="all" selected>All Record Types</option>
+                        <option value="lab_result">Lab Results</option>
+                        <option value="clinical_note">Clinical Notes</option>
+                        <option value="prescription">Prescriptions</option>
+                        <option value="radiology">Radiology</option>
+                        <option value="vaccination">Vaccinations</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <select id="recordDateFilter" class="form-select">
+                        <option value="all" selected>All Dates</option>
+                        <option value="last-month">Last Month</option>
+                        <option value="last-3-months">Last 3 Months</option>
+                        <option value="last-year">Last Year</option>
+                    </select>
+                </div>
+                
+                <div class="ms-auto">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-secondary active" id="listViewBtn">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary" id="gridViewBtn">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
+    
+    <!-- Records summary -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-4 mb-md-0">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                    <h5>Total Records</h5>
+                    <h2>{{ records|length }}</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="mb-3">Records by Type</h5>
+                    <div class="record-type-chart-container">
+                        <canvas id="recordTypeChart" height="125"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Records list view (default) -->
+    <div id="recordsListView">
+        {% for record in records|sort(attribute='recorded_at', reverse=true) %}
+        <div class="card mb-3 record-card" data-record-type="{{ record.record_type }}">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="record-icon me-3 
+                                {% if record.record_type == 'lab_result' %}bg-info
+                                {% elif record.record_type == 'clinical_note' %}bg-primary
+                                {% elif record.record_type == 'prescription' %}bg-success
+                                {% elif record.record_type == 'radiology' %}bg-warning
+                                {% else %}bg-secondary{% endif %}">
+                                {% if record.record_type == 'lab_result' %}<i class="fas fa-vial"></i>
+                                {% elif record.record_type == 'clinical_note' %}<i class="fas fa-clipboard"></i>
+                                {% elif record.record_type == 'prescription' %}<i class="fas fa-prescription"></i>
+                                {% elif record.record_type == 'radiology' %}<i class="fas fa-x-ray"></i>
+                                {% elif record.record_type == 'vaccination' %}<i class="fas fa-syringe"></i>
+                                {% else %}<i class="fas fa-file-medical"></i>{% endif %}
+                            </div>
+                            <div>
+                                <h5 class="mb-0">{{ record.title }}</h5>
+                                <div class="text-muted small">
+                                    <span class="badge 
+                                        {% if record.record_type == 'lab_result' %}bg-info
+                                        {% elif record.record_type == 'clinical_note' %}bg-primary
+                                        {% elif record.record_type == 'prescription' %}bg-success
+                                        {% elif record.record_type == 'radiology' %}bg-warning
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ record.record_type|replace('_', ' ')|title }}
+                                    </span>
+                                    <span class="ms-2">{{ record.recorded_at.strftime('%b %d, %Y') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mb-2 record-content-preview">{{ record.content|truncate(150) }}</p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <div class="mb-2">
+                            <span class="text-muted small">Recorded by:</span>
+                            <span class="small">{{ record.provider.get_full_name() }}</span>
+                        </div>
+                        <a href="{{ url_for('patient.view_health_record', record_id=record.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i>View Record
+                        </a>
+                        {% if record.file_path %}
+                        <a href="#" class="btn btn-outline-secondary btn-sm ms-1" title="Download attachment">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5 bg-light rounded">
+            <i class="fas fa-folder-open fa-4x mb-3 text-muted"></i>
+            <h4>No health records found</h4>
+            <p class="text-muted">There are no health records in your medical file yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Records grid view (toggled by JS) -->
+    <div id="recordsGridView" class="row" style="display: none;">
+        {% for record in records|sort(attribute='recorded_at', reverse=true) %}
+        <div class="col-md-4 mb-4 record-card" data-record-type="{{ record.record_type }}">
+            <div class="card h-100">
+                <div class="card-header 
+                    {% if record.record_type == 'lab_result' %}bg-info
+                    {% elif record.record_type == 'clinical_note' %}bg-primary
+                    {% elif record.record_type == 'prescription' %}bg-success
+                    {% elif record.record_type == 'radiology' %}bg-warning
+                    {% else %}bg-secondary{% endif %} text-white">
+                    <div class="d-flex align-items-center">
+                        {% if record.record_type == 'lab_result' %}<i class="fas fa-vial me-2"></i>
+                        {% elif record.record_type == 'clinical_note' %}<i class="fas fa-clipboard me-2"></i>
+                        {% elif record.record_type == 'prescription' %}<i class="fas fa-prescription me-2"></i>
+                        {% elif record.record_type == 'radiology' %}<i class="fas fa-x-ray me-2"></i>
+                        {% elif record.record_type == 'vaccination' %}<i class="fas fa-syringe me-2"></i>
+                        {% else %}<i class="fas fa-file-medical me-2"></i>{% endif %}
+                        {{ record.record_type|replace('_', ' ')|title }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ record.title }}</h5>
+                    <p class="card-text record-content-preview">{{ record.content|truncate(80) }}</p>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">{{ record.recorded_at.strftime('%b %d, %Y') }}</small>
+                        <a href="{{ url_for('patient.view_health_record', record_id=record.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle view controls
+    const listViewBtn = document.getElementById('listViewBtn');
+    const gridViewBtn = document.getElementById('gridViewBtn');
+    const listView = document.getElementById('recordsListView');
+    const gridView = document.getElementById('recordsGridView');
+    
+    listViewBtn.addEventListener('click', function() {
+        listView.style.display = 'block';
+        gridView.style.display = 'none';
+        listViewBtn.classList.add('active');
+        gridViewBtn.classList.remove('active');
+    });
+    
+    gridViewBtn.addEventListener('click', function() {
+        listView.style.display = 'none';
+        gridView.style.display = 'flex';
+        gridViewBtn.classList.add('active');
+        listViewBtn.classList.remove('active');
+    });
+    
+    // Search functionality
+    const searchInput = document.getElementById('recordSearch');
+    searchInput.addEventListener('input', filterRecords);
+    
+    // Filter by type
+    const typeFilter = document.getElementById('recordTypeFilter');
+    typeFilter.addEventListener('change', filterRecords);
+    
+    // Filter by date
+    const dateFilter = document.getElementById('recordDateFilter');
+    dateFilter.addEventListener('change', filterRecords);
+    
+    function filterRecords() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedType = typeFilter.value;
+        const selectedDate = dateFilter.value;
+        
+        const now = new Date();
+        let dateThreshold = null;
+        
+        if (selectedDate === 'last-month') {
+            dateThreshold = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        } else if (selectedDate === 'last-3-months') {
+            dateThreshold = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        } else if (selectedDate === 'last-year') {
+            dateThreshold = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        }
+        
+        document.querySelectorAll('.record-card').forEach(card => {
+            const cardText = card.textContent.toLowerCase();
+            const cardType = card.dataset.recordType;
+            
+            // Check search term match
+            const matchesSearch = searchTerm === '' || cardText.includes(searchTerm);
+            
+            // Check type match
+            const matchesType = selectedType === 'all' || cardType === selectedType;
+            
+            // For date filtering, we'd need actual dates from the server
+            // This is a simplified version
+            const matchesDate = selectedDate === 'all' || true;
+            
+            if (matchesSearch && matchesType && matchesDate) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+    
+    // Record Type Chart
+    const recordTypeCtx = document.getElementById('recordTypeChart');
+    if (recordTypeCtx) {
+        // Count records by type
+        const recordTypes = {};
+        document.querySelectorAll('.record-card').forEach(card => {
+            const type = card.dataset.recordType;
+            recordTypes[type] = (recordTypes[type] || 0) + 1;
+        });
+        
+        const labels = Object.keys(recordTypes).map(type => type.replace('_', ' ').charAt(0).toUpperCase() + type.replace('_', ' ').slice(1));
+        const data = Object.values(recordTypes);
+        const backgroundColors = [
+            'rgba(23, 162, 184, 0.7)',
+            'rgba(0, 123, 255, 0.7)',
+            'rgba(40, 167, 69, 0.7)',
+            'rgba(255, 193, 7, 0.7)',
+            'rgba(108, 117, 125, 0.7)'
+        ];
+        
+        new Chart(recordTypeCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Number of Records',
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

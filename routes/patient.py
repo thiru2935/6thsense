@@ -169,7 +169,6 @@ def readings():
     
     return render_template('patient/readings.html', patient=patient, readings=readings, reading_type=reading_type, days=days)
 
-@patient_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     patient = PatientProfile.query.filter_by(user_id=current_user.id).first()

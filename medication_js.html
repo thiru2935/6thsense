@@ -1,0 +1,248 @@
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up medication log modal
+    const logMedicationModal = document.getElementById('logMedicationModal');
+    if (logMedicationModal) {
+        logMedicationModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const medId = button.getAttribute('data-med-id');
+            const medName = button.getAttribute('data-med-name');
+            
+            // Set form values
+            document.getElementById('medication_id').value = medId;
+            document.getElementById('medication_name').value = medName;
+            
+            // Set the form action
+            document.getElementById('logMedicationForm').action = `/patient/log_medication/${medId}`;
+        });
+    }
+    
+    // Sample data - in production, this would come from the server
+    const medicationData = {
+        medications: [
+            {% for med in medications|selectattr('is_active', 'equalto', true) %}
+            {
+                id: {{ med.id }},
+                name: "{{ med.name }}",
+                logs: [
+                    {% for log in med.logs %}
+                    {
+                        date: "{{ log.taken_at.strftime('%Y-%m-%d') }}",
+                        time: "{{ log.taken_at.strftime('%H:%M') }}",
+                        taken: {{ 'true' if log.was_taken else 'false' }}
+                    }{{ ',' if not loop.last }}
+                    {% endfor %}
+                ]
+            }{{ ',' if not loop.last }}
+            {% endfor %}
+        ]
+    };
+    
+    // Set up medication timeline chart
+    setupMedicationTimeline(medicationData);
+    
+    // Set up adherence chart
+    setupAdherenceChart(medicationData);
+    
+    // Handle timeline range change
+    document.getElementById('timelineRange').addEventListener('change', function() {
+        setupMedicationTimeline(medicationData, parseInt(this.value));
+    });
+});
+
+function setupMedicationTimeline(data, days = 30) {
+    const ctx = document.getElementById('medicationTimelineChart');
+    if (!ctx) return;
+    
+    // Get date range
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    // Prepare datasets
+    const medications = data.medications;
+    const datasets = [];
+    const dateLabels = [];
+    
+    // Create date labels
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        dateLabels.push(formatDate(d));
+    }
+    
+    // Create a dataset for each medication
+    medications.forEach((med, i) => {
+        const dataset = {
+            label: med.name,
+            data: [],
+            backgroundColor: getColorForIndex(i, 0.7),
+            borderColor: getColorForIndex(i),
+            borderWidth: 2,
+            tension: 0.2,
+            fill: false
+        };
+        
+        // For each day in the range, find if medication was taken
+        dateLabels.forEach(dateStr => {
+            const logs = med.logs.filter(log => log.date === dateStr);
+            
+            if (logs.length > 0) {
+                // Calculate adherence value: 1 for taken, 0 for missed
+                const takenCount = logs.filter(log => log.taken).length;
+                const value = logs.length > 0 ? takenCount / logs.length : 0;
+                dataset.data.push(value);
+            } else {
+                // No logs for this day
+                dataset.data.push(null);
+            }
+        });
+        
+        datasets.push(dataset);
+    });
+    
+    // Create or update chart
+    if (window.medicationTimelineChart) {
+        window.medicationTimelineChart.data.labels = dateLabels;
+        window.medicationTimelineChart.data.datasets = datasets;
+        window.medicationTimelineChart.update();
+    } else {
+        window.medicationTimelineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dateLabels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: {
+                            callback: function(value) {
+                                if (value === 0) return 'Missed';
+                                if (value === 1) return 'Taken';
+                                return '';
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                if (value === 1) return context.dataset.label + ': Taken';
+                                if (value === 0) return context.dataset.label + ': Missed';
+                                return context.dataset.label + ': No data';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function setupAdherenceChart(data) {
+    const ctx = document.getElementById('adherenceDonutChart');
+    if (!ctx) return;
+    
+    // Calculate adherence statistics
+    let totalLogs = 0;
+    let takenLogs = 0;
+    
+    data.medications.forEach(med => {
+        med.logs.forEach(log => {
+            totalLogs++;
+            if (log.taken) takenLogs++;
+        });
+    });
+    
+    const missedLogs = totalLogs - takenLogs;
+    let adherenceRate = totalLogs > 0 ? Math.round((takenLogs / totalLogs) * 100) : 0;
+    
+    // Update statistics elements
+    document.getElementById('overallAdherenceRate').textContent = adherenceRate + '%';
+    document.getElementById('adherenceProgressBar').style.width = adherenceRate + '%';
+    document.getElementById('adherenceProgressBar').setAttribute('aria-valuenow', adherenceRate);
+    document.getElementById('dosesOnTime').textContent = takenLogs;
+    document.getElementById('dosesMissed').textContent = missedLogs;
+    
+    // Calculate streak (simplified version)
+    let streak = 0;
+    // This would need more logic in a real implementation
+    document.getElementById('currentStreak').textContent = streak + ' days';
+    
+    // Create chart
+    window.adherenceChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Taken', 'Missed'],
+            datasets: [{
+                data: [takenLogs, missedLogs],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(220, 53, 69, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.formattedValue;
+                            const percentage = totalLogs > 0 
+                                ? Math.round((context.raw / totalLogs) * 100) 
+                                : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Helper Functions
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}
+
+function getColorForIndex(index, alpha = 1) {
+    const colors = [
+        `rgba(0, 123, 255, ${alpha})`,
+        `rgba(40, 167, 69, ${alpha})`,
+        `rgba(111, 66, 193, ${alpha})`,
+        `rgba(23, 162, 184, ${alpha})`,
+        `rgba(255, 193, 7, ${alpha})`,
+        `rgba(220, 53, 69, ${alpha})`,
+        `rgba(108, 117, 125, ${alpha})`
+    ];
+    return colors[index % colors.length];
+}
+</script>
+{% endblock %}

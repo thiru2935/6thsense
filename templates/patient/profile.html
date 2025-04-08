@@ -5,6 +5,135 @@
 {% block content %}
 <div class="container">
     <div class="row justify-content-center">
+<!-- Health Status Dashboard -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-info text-white">
+        <h4 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Health Status Dashboard</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card border-0 health-metric-card">
+                    <div class="card-body text-center">
+                        <div class="health-metric-icon mb-3">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <h5>Blood Glucose</h5>
+                        <div class="health-metric-value">
+                            <span class="h3">124</span>
+                            <small class="text-muted">mg/dL</small>
+                            <div class="small text-muted">Apr 5, 2025</div>
+                            <span class="badge bg-warning">High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-0 health-metric-card">
+                    <div class="card-body text-center">
+                        <div class="health-metric-icon mb-3">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <h5>Blood Pressure</h5>
+                        <div class="health-metric-value">
+                            <span class="h3">126/82</span>
+                            <small class="text-muted">mmHg</small>
+                            <div class="small text-muted">Apr 6, 2025</div>
+                            <span class="badge bg-success">Normal</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card border-0 health-metric-card">
+                    <div class="card-body text-center">
+                        <div class="health-metric-icon mb-3">
+                            <i class="fas fa-walking"></i>
+                        </div>
+                        <h5>Activity</h5>
+                        <div class="health-metric-value">
+                            <span class="h3">8,423</span>
+                            <small class="text-muted">steps</small>
+                            <div class="small text-muted">Today</div>
+                            <span class="badge bg-primary">Good</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Latest AI Risk Assessments -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <h5 class="mb-3">AI Risk Assessments</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Condition</th>
+                                <th>Risk Score</th>
+                                <th>Confidence</th>
+                                <th>Assessment Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('patient.ai_prediction', condition='diabetes') }}">
+                                        <i class="fas fa-tint text-danger me-2"></i>Diabetes
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" style="width: 45%"></div>
+                                    </div>
+                                    <span class="small mt-1 d-inline-block">45%</span>
+                                </td>
+                                <td>85%</td>
+                                <td>Apr 3, 2025</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('patient.ai_prediction', condition='hypertension') }}">
+                                        <i class="fas fa-heart text-primary me-2"></i>Hypertension
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: 28%"></div>
+                                    </div>
+                                    <span class="small mt-1 d-inline-block">28%</span>
+                                </td>
+                                <td>92%</td>
+                                <td>Apr 2, 2025</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('patient.ai_prediction', condition='cardiovascular') }}">
+                                        <i class="fas fa-heartbeat text-warning me-2"></i>Cardiovascular
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: 22%"></div>
+                                    </div>
+                                    <span class="small mt-1 d-inline-block">22%</span>
+                                </td>
+                                <td>88%</td>
+                                <td>Apr 1, 2025</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end">
+                    <a href="{{ url_for('patient.predictions') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-chart-line me-2"></i>View All Risk Assessments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
         <div class="col-lg-10">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">

@@ -836,3 +836,252 @@ main {
     margin-top: 1.5rem;
   }
 }
+
+/* Health Metric Cards */
+.health-metric-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 10px;
+    background-color: var(--bs-dark);
+}
+
+.health-metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.health-metric-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    color: white;
+    font-size: 24px;
+}
+
+.health-metric-value {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+
+/* Health Metric Cards */
+.health-metric-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 10px;
+    background-color: var(--bs-dark);
+}
+
+.health-metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.health-metric-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    color: white;
+    font-size: 24px;
+}
+
+.health-metric-value {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* Health Records */
+.record-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    color: white;
+    font-size: 18px;
+}
+
+.record-content-preview {
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.record-card {
+    transition: transform 0.2s;
+}
+
+.record-card:hover {
+    transform: translateY(-2px);
+}
+
+#recordsGridView .card {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Device Cards */
+.device-card {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.device-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 20px rgba(0, 0, 0, 0.2);
+}
+
+.device-card-header {
+    padding: 1.5rem;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    background: var(--bs-dark);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.device-type-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+}
+
+.device-type-icon.small {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+}
+
+.device-status-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+}
+
+.device-name {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.device-info {
+    margin-bottom: 1.5rem;
+}
+
+.device-detail {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.device-detail .label {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.device-readings-summary {
+    padding-top: 0.5rem;
+}
+
+.latest-reading {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.reading-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+    display: block;
+}
+
+.reading-unit {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.reading-time {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.inactive-device {
+    opacity: 0.6;
+}
+
+.device-status-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 20px;
+    color: white;
+}
+
+.device-status-icon.active {
+    background-color: var(--bs-success);
+}
+
+.device-status-icon.offline {
+    background-color: var(--bs-warning);
+}
+
+.device-gauge {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, var(--bs-dark) 55%, var(--bs-info) 56%, var(--bs-info) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.device-gauge-value {
+    background-color: var(--bs-dark);
+    width: 75%;
+    height: 75%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.supported-devices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.supported-device-item {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+}
+
+.supported-device-item .device-type-icon {
+    margin-right: 5px;
+}
+
+.device-guide-list li {
+    margin-bottom: 10px;
+}

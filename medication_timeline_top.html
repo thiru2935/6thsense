@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block title %}My Medications - 6th Sense{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-pills me-2"></i>My Medications</h1>
+    </div>
+    
+    <!-- Medication Timeline Visualization -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Medication Timeline</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <select id="timelineRange" class="form-select form-select-sm w-auto">
+                    <option value="7">Last 7 Days</option>
+                    <option value="14">Last 14 Days</option>
+                    <option value="30" selected>Last 30 Days</option>
+                </select>
+            </div>
+            <div class="timeline-chart-container">
+                <canvas id="medicationTimelineChart" height="250"></canvas>
+            </div>
+            <div class="small text-muted text-center mt-3">
+                <span class="badge bg-success me-1">●</span> Taken
+                <span class="badge bg-danger mx-1">●</span> Missed
+                <span class="badge bg-secondary mx-1">●</span> No Data
+            </div>
+        </div>
+    </div>
