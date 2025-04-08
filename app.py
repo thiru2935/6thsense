@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -49,6 +50,13 @@ with app.app_context():
     from routes.api import api_bp
     from routes.chatbot import chatbot_bp
     
+    # Initialize default data
+    from services.questionnaire import create_default_questions
+    try:
+        create_default_questions()
+    except Exception as e:
+        app.logger.error(f"Error creating default questions: {e}")
+    
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(patient_bp)
@@ -66,6 +74,17 @@ with app.app_context():
     def inject_now():
         from datetime import datetime
         return {'now': datetime.utcnow()}
+    
+    # Template filters
+    @app.template_filter('from_json')
+    def from_json(value):
+        if not value:
+            return []
+        try:
+            return json.loads(value)
+        except Exception as e:
+            app.logger.error(f"Error parsing JSON: {e}")
+            return []
         
     # Main route
     @app.route('/')

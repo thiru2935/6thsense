@@ -9,9 +9,14 @@
             <i class="fas fa-brain me-2"></i>
             AI Health Prediction: {{ condition|title }}
         </h1>
-        <a href="{{ url_for('patient.predictions') }}" class="btn btn-outline-primary">
-            <i class="fas fa-history me-2"></i>View All Predictions
-        </a>
+        <div>
+            <a href="{{ url_for('patient.questionnaire', condition=condition) }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-clipboard-check me-2"></i>Complete Questionnaire
+            </a>
+            <a href="{{ url_for('patient.predictions') }}" class="btn btn-outline-primary">
+                <i class="fas fa-history me-2"></i>View All Predictions
+            </a>
+        </div>
     </div>
 
     {% if not prediction.success %}
@@ -106,6 +111,16 @@
         </div>
     </div>
     {% endif %}
+    
+    <!-- Personalization Note -->
+    <div class="alert alert-info mb-4">
+        <h6><i class="fas fa-lightbulb me-2"></i>Want a more personalized assessment?</h6>
+        <p class="mb-1">
+            Complete our <a href="{{ url_for('patient.questionnaire', condition=condition) }}">health questionnaire</a> to 
+            provide additional information about your lifestyle, symptoms, and family history. This helps our AI model 
+            generate more accurate and personalized predictions.
+        </p>
+    </div>
     
     <div class="disclaimer bg-light p-3 rounded mb-4">
         <h6><i class="fas fa-exclamation-circle me-2"></i>Disclaimer</h6>

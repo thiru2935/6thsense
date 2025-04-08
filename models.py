@@ -1,12 +1,13 @@
+from app import db
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db
 
-# User roles
+# User role constants
 USER_ROLE_PATIENT = 'patient'
 USER_ROLE_PROVIDER = 'provider'
 USER_ROLE_ADMIN = 'admin'
+
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -15,31 +16,34 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     first_name = db.Column(db.String(64))
     last_name = db.Column(db.String(64))
-    role = db.Column(db.String(20), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # patient, provider, or admin
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     patient_profile = db.relationship('PatientProfile', backref='user', uselist=False, cascade='all, delete-orphan')
     provider_profile = db.relationship('ProviderProfile', backref='user', uselist=False, cascade='all, delete-orphan')
-
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-        
+    
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
     def is_patient(self):
-        return self.role == USER_ROLE_PATIENT
+        return self.role == 'patient'
     
     def is_provider(self):
-        return self.role == USER_ROLE_PROVIDER
+        return self.role == 'provider'
     
     def is_admin(self):
-        return self.role == USER_ROLE_ADMIN
+        return self.role == 'admin'
     
     def get_full_name(self):
-        return f"{self.first_name} {self.last_name}" if self.first_name and self.last_name else self.username
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        return self.username
+
 
 class PatientProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -57,7 +61,9 @@ class PatientProfile(db.Model):
     readings = db.relationship('HealthReading', backref='patient', cascade='all, delete-orphan')
     alerts = db.relationship('Alert', backref='patient', cascade='all, delete-orphan')
     medications = db.relationship('Medication', backref='patient', cascade='all, delete-orphan')
-    
+    health_questionnaires = db.relationship('HealthQuestionnaire', backref='patient', cascade='all, delete-orphan')
+
+
 class ProviderProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -66,8 +72,9 @@ class ProviderProfile(db.Model):
     hospital_affiliation = db.Column(db.String(100))
     contact_number = db.Column(db.String(20))
     
-    # Many-to-many relationship with patients
+    # Relationships
     patients = db.relationship('ProviderPatientAssociation', back_populates='provider')
+
 
 class ProviderPatientAssociation(db.Model):
     provider_id = db.Column(db.Integer, db.ForeignKey('provider_profile.id'), primary_key=True)
@@ -77,6 +84,7 @@ class ProviderPatientAssociation(db.Model):
     # Relationships
     provider = db.relationship('ProviderProfile', back_populates='patients')
     patient = db.relationship('PatientProfile', backref=db.backref('providers', cascade='all, delete-orphan'))
+
 
 class Device(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -89,8 +97,9 @@ class Device(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationship with health readings
+    # Relationships
     readings = db.relationship('HealthReading', backref='device', cascade='all, delete-orphan')
+
 
 class HealthReading(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -103,10 +112,11 @@ class HealthReading(db.Model):
     notes = db.Column(db.Text)
     is_abnormal = db.Column(db.Boolean, default=False)
     
-    # Additional readings for specific types
+    # Additional values for specific reading types
     value_systolic = db.Column(db.Float)  # For blood pressure
     value_diastolic = db.Column(db.Float)  # For blood pressure
     value_pulse = db.Column(db.Float)  # For pulse rate
+
 
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -119,6 +129,7 @@ class Alert(db.Model):
     resolved_at = db.Column(db.DateTime)
     resolved_by = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+
 class Medication(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
@@ -130,8 +141,9 @@ class Medication(db.Model):
     instructions = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True)
     
-    # Relationship with medication logs
+    # Relationships
     logs = db.relationship('MedicationLog', backref='medication', cascade='all, delete-orphan')
+
 
 class MedicationLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -139,6 +151,7 @@ class MedicationLog(db.Model):
     taken_at = db.Column(db.DateTime, default=datetime.utcnow)
     was_taken = db.Column(db.Boolean, default=True)  # False if missed
     notes = db.Column(db.Text)
+
 
 class PredictionModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -150,8 +163,9 @@ class PredictionModel(db.Model):
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
-    # Relationship with predictions
+    # Relationships
     predictions = db.relationship('Prediction', backref='model', cascade='all, delete-orphan')
+
 
 class Prediction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -162,8 +176,13 @@ class Prediction(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
     
-    # Relationship with patient
+    # Relationships
     patient = db.relationship('PatientProfile', backref=db.backref('predictions', cascade='all, delete-orphan'))
+    key_factors = db.Column(db.Text)  # Stored as JSON
+    recommendations = db.Column(db.Text)  # Stored as JSON
+    assessment = db.Column(db.Text)
+    condition = db.Column(db.String(50))  # diabetes, hypertension, cardiovascular
+
 
 class ChatSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -172,9 +191,10 @@ class ChatSession(db.Model):
     session_end = db.Column(db.DateTime)
     language = db.Column(db.String(50), default='English')
     
-    # Relationship with chat messages
+    # Relationships
     messages = db.relationship('ChatMessage', backref='session', cascade='all, delete-orphan')
     user = db.relationship('User', backref='chat_sessions')
+
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -182,6 +202,7 @@ class ChatMessage(db.Model):
     sender_type = db.Column(db.String(20), nullable=False)  # user or bot
     message = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class HealthRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -197,7 +218,8 @@ class HealthRecord(db.Model):
     patient = db.relationship('PatientProfile', backref=db.backref('health_records', cascade='all, delete-orphan'))
     provider = db.relationship('User', backref='recorded_health_records')
     consents = db.relationship('RecordConsent', backref='health_record', cascade='all, delete-orphan')
-    
+
+
 class RecordConsent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     record_id = db.Column(db.Integer, db.ForeignKey('health_record.id'), nullable=False)
@@ -210,6 +232,7 @@ class RecordConsent(db.Model):
     # Relationships
     provider = db.relationship('ProviderProfile', backref='record_consents')
     patient = db.relationship('User', backref='granted_consents')
+
 
 class TestAppointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -224,3 +247,37 @@ class TestAppointment(db.Model):
     
     # Relationships
     patient = db.relationship('PatientProfile', backref=db.backref('test_appointments', cascade='all, delete-orphan'))
+
+
+# New models for health questionnaires
+class HealthQuestionnaire(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    condition = db.Column(db.String(50), nullable=False)  # diabetes, hypertension, cardiovascular
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    responses = db.relationship('QuestionnaireResponse', backref='questionnaire', cascade='all, delete-orphan')
+
+
+class QuestionnaireQuestion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    condition = db.Column(db.String(50), nullable=False)  # diabetes, hypertension, cardiovascular
+    question_text = db.Column(db.Text, nullable=False)
+    question_type = db.Column(db.String(20), nullable=False)  # multiple_choice, boolean, text, numeric
+    options = db.Column(db.Text)  # JSON string for multiple choice options
+    weight = db.Column(db.Integer, default=1)  # Importance weight for AI prediction
+    order = db.Column(db.Integer)  # Order in the questionnaire
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    responses = db.relationship('QuestionnaireResponse', backref='question')
+
+
+class QuestionnaireResponse(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    questionnaire_id = db.Column(db.Integer, db.ForeignKey('health_questionnaire.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('questionnaire_question.id'), nullable=False)
+    response_text = db.Column(db.Text, nullable=False)  # String representation of answer
+    response_value = db.Column(db.Float)  # Numerical value if applicable
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

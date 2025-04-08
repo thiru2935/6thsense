@@ -2,28 +2,41 @@
 AI Predictions Service using Google's Generative AI models for health predictions.
 This service integrates with Gemini to predict chronic diseases based on health data.
 """
+
 import os
-import google.generativeai as genai
+import json
+import logging
+import re
 from datetime import datetime, timedelta
+import google.generativeai as genai
+from flask import current_app
 from app import db
 from models import (
     HealthReading, 
-    PatientProfile, 
-    Medication, 
-    HealthRecord, 
+    
+    # Additional imports for questionnaire integration
+    HealthQuestionnaire,
+    QuestionnaireQuestion,
+    QuestionnaireResponse,
     Prediction, 
-    PredictionModel
+    PredictionModel, 
+    PatientProfile,
+    Device
 )
+from services.questionnaire import get_questionnaire_data_for_prediction
 
-# Configure the Gemini API with the provided API key
+
 def configure_genai():
     """Configure the Gemini API with API key"""
-    api_key = os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get('GEMINI_API_KEY')
     if not api_key:
-        raise ValueError("GEMINI_API_KEY environment variable not set")
+        logging.error("GEMINI_API_KEY not found in environment variables")
+        return False
+    
     genai.configure(api_key=api_key)
+    return True
 
-# Function to get health data for a patient
+
 def get_patient_health_data(patient_id, days=90):
     """
     Collect comprehensive health data for a specific patient over a given time period.
@@ -35,95 +48,167 @@ def get_patient_health_data(patient_id, days=90):
     Returns:
         Dictionary containing structured health data
     """
-    since_date = datetime.utcnow() - timedelta(days=days)
+    try:
+        # Get patient profile
+        patient = PatientProfile.query.get(patient_id)
+        if not patient:
+            return None
+            
+        # Calculate the start date for the data retrieval
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+        
+        # Get all readings in the time period
+        readings = HealthReading.query.filter(
+            HealthReading.patient_id == patient_id,
+            HealthReading.timestamp >= start_date,
+            HealthReading.timestamp <= end_date
+        ).order_by(HealthReading.timestamp.desc()).all()
+        
+        # Get patient's devices
+        devices = Device.query.filter_by(patient_id=patient_id).all()
+        
+        # Structured health data
+        health_data = {
+            "patient_info": {
+                "id": patient_id,
+                "age": calculate_age(patient.date_of_birth) if patient.date_of_birth else None,
+                "gender": patient.gender,
+                "primary_diagnosis": patient.diagnosis
+            },
+            "device_info": [
+                {
+                    "device_type": device.device_type,
+                    "manufacturer": device.manufacturer,
+                    "model": device.model,
+                    "last_synced": device.last_synced.isoformat() if device.last_synced else None
+                }
+                for device in devices
+            ],
+            "readings": {
+                "blood_glucose": [],
+                "blood_pressure": [],
+                "weight": [],
+                "heart_rate": [],
+                "activity": [],
+                "other": []
+            },
+            "abnormal_readings_count": 0,
+            "reading_trends": {},
+            "metadata": {
+                "data_period_days": days,
+                "total_readings_count": len(readings),
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat()
+            }
+        }
+        
+        # Process and categorize readings
+        for reading in readings:
+            reading_data = {
+                "value": reading.value,
+                "unit": reading.unit,
+                "timestamp": reading.timestamp.isoformat(),
+                "is_abnormal": reading.is_abnormal
+            }
+            
+            # Add special readings for blood pressure
+            if reading.reading_type == "blood_pressure":
+                reading_data["systolic"] = reading.value_systolic
+                reading_data["diastolic"] = reading.value_diastolic
+                reading_data["pulse"] = reading.value_pulse
+            
+            # Increment abnormal count if applicable
+            if reading.is_abnormal:
+                health_data["abnormal_readings_count"] += 1
+            
+            # Add to appropriate category
+            if reading.reading_type in health_data["readings"]:
+                health_data["readings"][reading.reading_type].append(reading_data)
+            else:
+                health_data["readings"]["other"].append({
+                    **reading_data,
+                    "reading_type": reading.reading_type
+                })
+        
+        # Calculate trends
+        for reading_type, readings_list in health_data["readings"].items():
+            if not readings_list:
+                continue
+                
+            # Sort by timestamp if needed
+            readings_list.sort(key=lambda x: x["timestamp"], reverse=True)
+            
+            # For blood pressure, we need to handle systolic and diastolic
+            if reading_type == "blood_pressure":
+                # Calculate systolic trend
+                systolic_values = [r.get("systolic") for r in readings_list if r.get("systolic") is not None]
+                if len(systolic_values) > 1:
+                    systolic_trend = calculate_trend(systolic_values)
+                    health_data["reading_trends"]["systolic"] = systolic_trend
+                
+                # Calculate diastolic trend
+                diastolic_values = [r.get("diastolic") for r in readings_list if r.get("diastolic") is not None]
+                if len(diastolic_values) > 1:
+                    diastolic_trend = calculate_trend(diastolic_values)
+                    health_data["reading_trends"]["diastolic"] = diastolic_trend
+            else:
+                # For other readings, use the main value
+                values = [r["value"] for r in readings_list]
+                if len(values) > 1:
+                    trend = calculate_trend(values)
+                    health_data["reading_trends"][reading_type] = trend
+        
+        # Get questionnaire data for all conditions
+        conditions = ["diabetes", "hypertension", "cardiovascular"]
+        health_data["questionnaires"] = {}
+        
+        for cond in conditions:
+            questionnaire_data = get_questionnaire_data_for_prediction(patient_id, cond)
+            if questionnaire_data:
+                health_data["questionnaires"][cond] = questionnaire_data
+        
+        return health_data
     
-    # Get patient profile
-    patient = PatientProfile.query.filter_by(id=patient_id).first()
-    
-    if not patient:
+    except Exception as e:
+        current_app.logger.error(f"Error getting patient health data: {str(e)}")
+        return None
+
+
+def calculate_age(birth_date):
+    """Calculate age from birth_date"""
+    if not birth_date:
+        return None
+    today = datetime.today()
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+
+def calculate_trend(values):
+    """
+    Calculate the trend of a series of values.
+    Returns 'increasing', 'decreasing', 'stable', or None if not enough data
+    """
+    if len(values) < 2:
         return None
     
-    # Get user information
-    user = patient.user
+    # Simple trend: compare first and last value
+    first_value = values[-1]  # Oldest value
+    last_value = values[0]    # Newest value
     
-    # Get health readings
-    readings = HealthReading.query.filter_by(
-        patient_id=patient_id
-    ).filter(
-        HealthReading.timestamp >= since_date
-    ).order_by(HealthReading.timestamp).all()
+    # Calculate percentage change
+    if first_value == 0:
+        return None
     
-    # Organize readings by type
-    readings_by_type = {}
-    for reading in readings:
-        if reading.reading_type not in readings_by_type:
-            readings_by_type[reading.reading_type] = []
-        
-        reading_data = {
-            'value': reading.value,
-            'unit': reading.unit,
-            'timestamp': reading.timestamp.isoformat(),
-            'is_abnormal': reading.is_abnormal
-        }
-        
-        # Add specific blood pressure data if available
-        if reading.reading_type == 'blood_pressure' and reading.value_systolic and reading.value_diastolic:
-            reading_data['systolic'] = reading.value_systolic
-            reading_data['diastolic'] = reading.value_diastolic
-            if reading.value_pulse:
-                reading_data['pulse'] = reading.value_pulse
-                
-        readings_by_type[reading.reading_type].append(reading_data)
+    percent_change = ((last_value - first_value) / abs(first_value)) * 100
     
-    # Get medications
-    medications = Medication.query.filter_by(
-        patient_id=patient_id,
-        is_active=True
-    ).all()
-    
-    medications_data = []
-    for med in medications:
-        med_data = {
-            'name': med.name,
-            'dosage': med.dosage,
-            'frequency': med.frequency,
-            'start_date': med.start_date.isoformat() if med.start_date else None,
-            'end_date': med.end_date.isoformat() if med.end_date else None
-        }
-        medications_data.append(med_data)
-    
-    # Get health records
-    health_records = HealthRecord.query.filter_by(
-        patient_id=patient_id
-    ).filter(
-        HealthRecord.recorded_at >= since_date
-    ).order_by(HealthRecord.recorded_at).all()
-    
-    records_by_type = {}
-    for record in health_records:
-        if record.record_type not in records_by_type:
-            records_by_type[record.record_type] = []
-        
-        record_data = {
-            'title': record.title,
-            'content': record.content,
-            'recorded_at': record.recorded_at.isoformat()
-        }
-        records_by_type[record.record_type].append(record_data)
-    
-    # Compile all data
-    health_data = {
-        'patient': {
-            'age': (datetime.utcnow().date() - patient.date_of_birth).days // 365 if patient.date_of_birth else None,
-            'gender': patient.gender,
-            'diagnosis': patient.diagnosis,
-        },
-        'readings': readings_by_type,
-        'medications': medications_data,
-        'health_records': records_by_type
-    }
-    
-    return health_data
+    # Categorize the trend
+    if abs(percent_change) < 5:
+        return "stable"
+    elif percent_change > 0:
+        return "increasing"
+    else:
+        return "decreasing"
+
 
 def generate_prediction_prompt(health_data, condition):
     """
@@ -136,106 +221,143 @@ def generate_prediction_prompt(health_data, condition):
     Returns:
         Formatted prompt string
     """
-    prompt = f"""As a medical AI assistant, analyze the following patient health data and provide an assessment 
-of their risk for {condition.upper()}. Consider all the data points, correlations, and medical guidelines.
+    if not health_data:
+        return "Unable to retrieve patient health data."
+    
+    # Base prompt structure
+    prompt = f"""
+You are a medical AI assistant specialized in chronic disease risk assessment. Analyze the following patient data and provide a risk assessment for {condition.upper()}.
 
 PATIENT INFORMATION:
-- Age: {health_data['patient'].get('age', 'Unknown')}
-- Gender: {health_data['patient'].get('gender', 'Unknown')}
-- Current Diagnosis: {health_data['patient'].get('diagnosis', 'None')}
+- Age: {health_data['patient_info']['age'] if health_data['patient_info']['age'] else 'Unknown'}
+- Gender: {health_data['patient_info']['gender'] if health_data['patient_info']['gender'] else 'Unknown'}
+- Primary Diagnosis: {health_data['patient_info']['primary_diagnosis'] if health_data['patient_info']['primary_diagnosis'] else 'None'}
 
+HEALTH READINGS SUMMARY (Past {health_data['metadata']['data_period_days']} days):
+- Total Readings: {health_data['metadata']['total_readings_count']}
+- Abnormal Readings: {health_data['abnormal_readings_count']}
 """
-    
-    # Add readings section if available
-    if health_data['readings']:
-        prompt += "HEALTH READINGS:\n"
-        for reading_type, readings in health_data['readings'].items():
-            if readings:
-                prompt += f"- {reading_type.replace('_', ' ').title()}:\n"
-                # Add last 10 readings with timestamps
-                for reading in readings[-10:]:
-                    date = datetime.fromisoformat(reading['timestamp']).strftime('%Y-%m-%d')
-                    if reading_type == 'blood_pressure':
-                        prompt += f"  * {date}: {reading.get('systolic', 'N/A')}/{reading.get('diastolic', 'N/A')} mmHg"
-                        if 'pulse' in reading:
-                            prompt += f", Pulse: {reading['pulse']} bpm"
-                        prompt += f" {'(Abnormal)' if reading.get('is_abnormal') else ''}\n"
-                    else:
-                        prompt += f"  * {date}: {reading['value']} {reading['unit']} {'(Abnormal)' if reading.get('is_abnormal') else ''}\n"
-    
-    # Add medications if available
-    if health_data['medications']:
-        prompt += "\nCURRENT MEDICATIONS:\n"
-        for med in health_data['medications']:
-            prompt += f"- {med['name']}, {med['dosage']}, {med['frequency']}\n"
-    
-    # Add relevant health records
-    if health_data['health_records']:
-        prompt += "\nRELEVANT HEALTH RECORDS:\n"
-        relevant_types = ['lab_result', 'clinical_note', 'assessment']
-        for record_type in relevant_types:
-            if record_type in health_data['health_records']:
-                prompt += f"- {record_type.replace('_', ' ').title()}:\n"
-                for record in health_data['health_records'][record_type][-5:]:  # Get the 5 most recent
-                    date = datetime.fromisoformat(record['recorded_at']).strftime('%Y-%m-%d')
-                    prompt += f"  * {date} - {record['title']}: {record['content'][:100]}...\n"
-    
-    # Add specific request based on condition
+
+    # Add Blood Glucose Data
+    bg_readings = health_data['readings']['blood_glucose']
+    if bg_readings:
+        latest_bg = bg_readings[0]
+        avg_bg = sum(r['value'] for r in bg_readings) / len(bg_readings)
+        abnormal_bg = sum(1 for r in bg_readings if r['is_abnormal'])
+        
+        bg_trend = health_data['reading_trends'].get('blood_glucose', 'Unknown')
+        
+        prompt += f"""
+BLOOD GLUCOSE DATA:
+- Latest Reading: {latest_bg['value']} {latest_bg['unit']} ({latest_bg['timestamp']})
+- Average Value: {avg_bg:.1f} {latest_bg['unit']}
+- Abnormal Readings: {abnormal_bg} out of {len(bg_readings)}
+- Trend: {bg_trend.title() if bg_trend else 'Insufficient data for trend analysis'}
+"""
+
+    # Add Blood Pressure Data
+    bp_readings = health_data['readings']['blood_pressure']
+    if bp_readings:
+        latest_bp = bp_readings[0]
+        avg_systolic = sum(r.get('systolic', 0) for r in bp_readings if 'systolic' in r) / len(bp_readings)
+        avg_diastolic = sum(r.get('diastolic', 0) for r in bp_readings if 'diastolic' in r) / len(bp_readings)
+        abnormal_bp = sum(1 for r in bp_readings if r['is_abnormal'])
+        
+        systolic_trend = health_data['reading_trends'].get('systolic', 'Unknown')
+        diastolic_trend = health_data['reading_trends'].get('diastolic', 'Unknown')
+        
+        prompt += f"""
+BLOOD PRESSURE DATA:
+- Latest Reading: {latest_bp.get('systolic', 'N/A')}/{latest_bp.get('diastolic', 'N/A')} mmHg ({latest_bp['timestamp']})
+- Average Value: {avg_systolic:.1f}/{avg_diastolic:.1f} mmHg
+- Abnormal Readings: {abnormal_bp} out of {len(bp_readings)}
+- Systolic Trend: {systolic_trend.title() if systolic_trend else 'Insufficient data'}
+- Diastolic Trend: {diastolic_trend.title() if diastolic_trend else 'Insufficient data'}
+"""
+
+    # Add Heart Rate Data
+    hr_readings = health_data['readings']['heart_rate']
+    if hr_readings:
+        latest_hr = hr_readings[0]
+        avg_hr = sum(r['value'] for r in hr_readings) / len(hr_readings)
+        abnormal_hr = sum(1 for r in hr_readings if r['is_abnormal'])
+        
+        hr_trend = health_data['reading_trends'].get('heart_rate', 'Unknown')
+        
+        prompt += f"""
+HEART RATE DATA:
+- Latest Reading: {latest_hr['value']} {latest_hr['unit']} ({latest_hr['timestamp']})
+- Average Value: {avg_hr:.1f} {latest_hr['unit']}
+- Abnormal Readings: {abnormal_hr} out of {len(hr_readings)}
+- Trend: {hr_trend.title() if hr_trend else 'Insufficient data for trend analysis'}
+"""
+
+    # Add Weight Data
+    weight_readings = health_data['readings']['weight']
+    if weight_readings:
+        latest_weight = weight_readings[0]
+        weight_trend = health_data['reading_trends'].get('weight', 'Unknown')
+        
+        prompt += f"""
+WEIGHT DATA:
+- Latest Reading: {latest_weight['value']} {latest_weight['unit']} ({latest_weight['timestamp']})
+- Trend: {weight_trend.title() if weight_trend else 'Insufficient data for trend analysis'}
+"""
+
+    # Add Questionnaire Data if available for this condition
+    if 'questionnaires' in health_data and condition in health_data['questionnaires']:
+        questionnaire = health_data['questionnaires'][condition]
+        prompt += f"\nQUESTIONNAIRE RESPONSES (completed on {questionnaire['completed_at']}):\n"
+        for response in questionnaire['responses']:
+            prompt += f"- Question: {response['question']}\n"
+            prompt += f"  Answer: {response['answer']}\n"
+
+    # Condition-specific instructions
     if condition.lower() == 'diabetes':
         prompt += """
-Based on this patient's data, please assess their diabetes risk considering factors such as:
-1. Blood glucose patterns
-2. HbA1c levels if available
-3. Medication history
-4. Family history if mentioned
-5. Weight, diet, and lifestyle factors if available
+TASK: Based on the above data, please provide:
+1. A diabetes risk assessment score from 0-100 (where 0 is lowest risk and 100 is highest risk)
+2. The key contributing factors to this patient's diabetes risk
+3. A detailed assessment of their current health status related to diabetes risk
+4. Specific, actionable recommendations for reducing their diabetes risk
 
-Please provide:
-1. A risk score from 0-100 (where 100 is highest risk)
-2. Key risk factors identified
-3. Brief explanation of your assessment
-4. Recommended monitoring or preventive measures
-        """
+FORMAT YOUR RESPONSE AS:
+Risk Score: [0-100]
+Key Factors: [List 3-5 primary factors contributing to risk]
+Assessment: [Detailed assessment of current health status]
+Recommendations: [Specific, actionable advice for risk reduction]
+"""
     elif condition.lower() == 'hypertension':
         prompt += """
-Based on this patient's data, please assess their hypertension risk considering factors such as:
-1. Blood pressure patterns
-2. Heart rate variability
-3. Medication history
-4. Lifestyle factors if available
-5. Comorbidities
+TASK: Based on the above data, please provide:
+1. A hypertension risk assessment score from 0-100 (where 0 is lowest risk and 100 is highest risk)
+2. The key contributing factors to this patient's hypertension risk
+3. A detailed assessment of their current blood pressure status
+4. Specific, actionable recommendations for blood pressure management
 
-Please provide:
-1. A risk score from 0-100 (where 100 is highest risk)
-2. Key risk factors identified
-3. Brief explanation of your assessment
-4. Recommended monitoring or preventive measures
-        """
+FORMAT YOUR RESPONSE AS:
+Risk Score: [0-100]
+Key Factors: [List 3-5 primary factors contributing to risk]
+Assessment: [Detailed assessment of current blood pressure status]
+Recommendations: [Specific, actionable advice for blood pressure management]
+"""
     elif condition.lower() == 'cardiovascular':
         prompt += """
-Based on this patient's data, please assess their cardiovascular disease risk considering factors such as:
-1. Blood pressure patterns
-2. Cholesterol levels if available
-3. Smoking status if mentioned
-4. Family history if available
-5. Existing conditions like diabetes or hypertension
+TASK: Based on the above data, please provide:
+1. A cardiovascular disease risk assessment score from 0-100 (where 0 is lowest risk and 100 is highest risk)
+2. The key contributing factors to this patient's cardiovascular risk
+3. A detailed assessment of their current heart health
+4. Specific, actionable recommendations for heart health improvement
 
-Please provide:
-1. A risk score from 0-100 (where 100 is highest risk)
-2. Key risk factors identified
-3. Brief explanation of your assessment
-4. Recommended monitoring or preventive measures
-        """
-    
-    prompt += """
-Provide your response in a structured format with clear sections for:
-RISK_SCORE: [0-100]
-KEY_FACTORS: [bulleted list]
-ASSESSMENT: [detailed explanation]
-RECOMMENDATIONS: [bulleted list]
+FORMAT YOUR RESPONSE AS:
+Risk Score: [0-100]
+Key Factors: [List 3-5 primary factors contributing to risk]
+Assessment: [Detailed assessment of current heart health]
+Recommendations: [Specific, actionable advice for heart health improvement]
 """
     
     return prompt
+
 
 def extract_risk_score_from_response(response_text):
     """
@@ -247,46 +369,41 @@ def extract_risk_score_from_response(response_text):
     Returns:
         Tuple of (risk_score, key_factors, assessment, recommendations)
     """
-    risk_score = None
-    key_factors = []
-    assessment = ""
-    recommendations = []
+    # Extract risk score
+    risk_score_match = re.search(r'Risk Score:\s*(\d+)', response_text)
+    risk_score = int(risk_score_match.group(1)) if risk_score_match else 50
     
-    # Look for the risk score value
-    if "RISK_SCORE:" in response_text:
-        risk_score_line = response_text.split("RISK_SCORE:")[1].split("\n")[0].strip()
-        try:
-            # Extract numeric value
-            risk_score = int(''.join(filter(str.isdigit, risk_score_line)))
-            # Ensure the score is within 0-100 range
-            risk_score = max(0, min(100, risk_score))
-        except (ValueError, IndexError):
-            risk_score = 50  # Default to middle value if parsing fails
+    # Ensure risk score is within 0-100
+    risk_score = max(0, min(100, risk_score))
     
     # Extract key factors
-    if "KEY_FACTORS:" in response_text:
-        factors_section = response_text.split("KEY_FACTORS:")[1].split("ASSESSMENT:")[0].strip()
-        for line in factors_section.split("\n"):
-            line = line.strip()
-            if line and (line.startswith("*") or line.startswith("-") or line.startswith("•")):
-                key_factors.append(line.lstrip("*-•").strip())
+    key_factors_match = re.search(r'Key Factors:(.*?)(?:Assessment:|$)', response_text, re.DOTALL)
+    key_factors_text = key_factors_match.group(1).strip() if key_factors_match else ""
+    
+    # Process into a list
+    key_factors = []
+    for line in key_factors_text.split("\n"):
+        cleaned_line = line.strip().lstrip("*-").strip()
+        if cleaned_line:
+            key_factors.append(cleaned_line)
     
     # Extract assessment
-    if "ASSESSMENT:" in response_text:
-        if "RECOMMENDATIONS:" in response_text:
-            assessment = response_text.split("ASSESSMENT:")[1].split("RECOMMENDATIONS:")[0].strip()
-        else:
-            assessment = response_text.split("ASSESSMENT:")[1].strip()
+    assessment_match = re.search(r'Assessment:(.*?)(?:Recommendations:|$)', response_text, re.DOTALL)
+    assessment = assessment_match.group(1).strip() if assessment_match else ""
     
     # Extract recommendations
-    if "RECOMMENDATIONS:" in response_text:
-        recommendations_section = response_text.split("RECOMMENDATIONS:")[1].strip()
-        for line in recommendations_section.split("\n"):
-            line = line.strip()
-            if line and (line.startswith("*") or line.startswith("-") or line.startswith("•")):
-                recommendations.append(line.lstrip("*-•").strip())
+    recommendations_match = re.search(r'Recommendations:(.*?)(?:$)', response_text, re.DOTALL)
+    recommendations_text = recommendations_match.group(1).strip() if recommendations_match else ""
     
-    return risk_score, key_factors, assessment, recommendations
+    # Process into a list
+    recommendations = []
+    for line in recommendations_text.split("\n"):
+        cleaned_line = line.strip().lstrip("*-").strip()
+        if cleaned_line:
+            recommendations.append(cleaned_line)
+    
+    return (risk_score, key_factors, assessment, recommendations)
+
 
 def predict_disease_risk(patient_id, condition, save_to_db=True):
     """
@@ -301,72 +418,85 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
         Dictionary with prediction results
     """
     try:
-        # Configure the Gemini API
-        configure_genai()
+        # Configure Gemini API
+        if not configure_genai():
+            return {
+                "error": "Gemini API configuration failed. Please check your API key."
+            }
         
-        # Get patient data
+        # Get patient health data
         health_data = get_patient_health_data(patient_id)
         if not health_data:
             return {
-                'success': False,
-                'message': 'Patient data not found',
-                'risk_score': None
+                "error": "Could not retrieve patient health data."
             }
         
-        # Generate prompt for the model
+        # Generate prompt
         prompt = generate_prediction_prompt(health_data, condition)
         
-        # Use Gemini model to generate prediction
+        # Get Gemini model
         model = genai.GenerativeModel('gemini-pro')
+        
+        # Generate response
         response = model.generate_content(prompt)
+        response_text = response.text
         
-        # Process the response to extract structured information
-        risk_score, key_factors, assessment, recommendations = extract_risk_score_from_response(response.text)
+        # Extract prediction components
+        risk_score, key_factors, assessment, recommendations = extract_risk_score_from_response(response_text)
         
-        # Save prediction to database if requested
-        if save_to_db and risk_score is not None:
+        # Convert key factors and recommendations to JSON strings
+        key_factors_json = json.dumps(key_factors)
+        recommendations_json = json.dumps(recommendations)
+        
+        # Save to database if requested
+        if save_to_db:
             # Find or create prediction model
-            model_obj = PredictionModel.query.filter_by(
-                name=f"{condition.title()} Risk Assessment",
-                target_condition=condition.lower()
+            model_name = f"{condition.title()} Risk Model"
+            pred_model = PredictionModel.query.filter_by(
+                name=model_name,
+                target_condition=condition
             ).first()
             
-            if not model_obj:
-                model_obj = PredictionModel(
-                    name=f"{condition.title()} Risk Assessment",
-                    description=f"AI-based risk assessment for {condition}",
+            if not pred_model:
+                pred_model = PredictionModel(
+                    name=model_name,
+                    description=f"AI-powered {condition} risk assessment model",
                     model_type="classification",
-                    target_condition=condition.lower(),
+                    target_condition=condition,
                     is_active=True
                 )
-                db.session.add(model_obj)
-                db.session.commit()
+                db.session.add(pred_model)
+                db.session.flush()
             
             # Create prediction record
             prediction = Prediction(
-                model_id=model_obj.id,
+                model_id=pred_model.id,
                 patient_id=patient_id,
                 prediction_value=risk_score,
                 confidence=0.85,  # Default confidence value
-                notes=f"Key factors: {', '.join(key_factors[:3])}... Assessment: {assessment[:100]}..."
+                timestamp=datetime.utcnow(),
+                notes=f"Generated using Gemini AI model",
+                key_factors=key_factors_json,
+                recommendations=recommendations_json,
+                assessment=assessment,
+                condition=condition
             )
+            
             db.session.add(prediction)
             db.session.commit()
         
+        # Return prediction results
         return {
-            'success': True,
-            'risk_score': risk_score,
-            'key_factors': key_factors,
-            'assessment': assessment,
-            'recommendations': recommendations
+            "risk_score": risk_score,
+            "key_factors": key_factors,
+            "assessment": assessment,
+            "recommendations": recommendations,
+            "condition": condition,
+            "timestamp": datetime.utcnow().isoformat()
         }
-    
+        
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
+        current_app.logger.error(f"Error in predict_disease_risk: {str(e)}")
         return {
-            'success': False,
-            'message': f'Error generating prediction: {str(e)}',
-            'details': error_details,
-            'risk_score': None
+            "error": f"Prediction failed: {str(e)}"
         }

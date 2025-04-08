@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import current_user, login_required
 from datetime import datetime, timedelta
+from functools import wraps
 
 from app import db
-from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile, Prediction
+from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile, Prediction, PredictionModel
 from services.prediction import predict_risk_score
 from services.device_integration import sync_devices
 from services.alerts import check_readings_for_alerts
@@ -12,10 +13,19 @@ from services.ai_predictions import predict_disease_risk
 patient_bp = Blueprint('patient', __name__, url_prefix='/patient')
 
 @patient_bp.before_request
-def check_patient():
+def check_patient_access():
     if not current_user.is_authenticated or not current_user.is_patient():
         flash('Access denied. You must be logged in as a patient.', 'danger')
         return redirect(url_for('auth.login'))
+
+def check_patient(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_patient():
+            flash('Access denied. You must be logged in as a patient.', 'danger')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @patient_bp.route('/dashboard')
 @login_required
@@ -486,3 +496,53 @@ def predictions():
     return render_template('patient/predictions.html',
                           patient=patient,
                           predictions_by_condition=predictions_by_condition)
+
+@patient_bp.route('/questionnaire/<condition>')
+@login_required
+@check_patient
+def questionnaire(condition):
+    """Show questionnaire for a specific condition"""
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Validate condition
+    valid_conditions = ['diabetes', 'hypertension', 'cardiovascular']
+    if condition not in valid_conditions:
+        flash(f'Invalid condition type. Must be one of: {", ".join(valid_conditions)}', 'danger')
+        return redirect(url_for('patient.dashboard'))
+    
+    # Get questions for this condition
+    from services.questionnaire import get_questionnaire_questions
+    questions = get_questionnaire_questions(condition)
+    
+    return render_template('patient/questionnaire.html',
+                          patient=patient,
+                          condition=condition,
+                          questions=questions)
+
+@patient_bp.route('/questionnaire/<condition>/submit', methods=['POST'])
+@login_required
+@check_patient
+def submit_questionnaire(condition):
+    """Process questionnaire submission and generate prediction"""
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Validate condition
+    valid_conditions = ['diabetes', 'hypertension', 'cardiovascular']
+    if condition not in valid_conditions:
+        flash(f'Invalid condition type. Must be one of: {", ".join(valid_conditions)}', 'danger')
+        return redirect(url_for('patient.dashboard'))
+    
+    # Collect responses
+    responses = {}
+    for key, value in request.form.items():
+        if key.startswith('q_'):
+            question_id = int(key.split('_')[1])
+            responses[question_id] = value
+    
+    # Save responses to database
+    from services.questionnaire import save_questionnaire_responses
+    save_questionnaire_responses(patient.id, condition, responses)
+    
+    # Redirect to prediction page to generate a new prediction with the questionnaire data
+    flash('Thank you for completing the questionnaire. Generating your personalized health assessment...', 'success')
+    return redirect(url_for('patient.ai_prediction', condition=condition))

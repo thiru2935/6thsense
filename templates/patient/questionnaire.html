@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block title %}Health Questionnaire - 6th Sense{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="fas fa-clipboard-check me-2"></i>
+            {{ condition|title }} Health Questionnaire
+        </h1>
+        <a href="{{ url_for('patient.ai_prediction', condition=condition) }}" class="btn btn-outline-primary">
+            <i class="fas fa-brain me-2"></i>Back to Prediction
+        </a>
+    </div>
+
+    <div class="alert alert-info mb-4">
+        <h6><i class="fas fa-lightbulb me-2"></i>Why complete this questionnaire?</h6>
+        <p class="mb-0">
+            Your answers help our AI model generate more accurate and personalized health risk predictions.
+            We'll combine this information with your medical history and device readings for a comprehensive assessment.
+        </p>
+    </div>
+
+    {% if not questions %}
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">No questionnaire available</h4>
+            <p>A questionnaire for {{ condition|title }} is not currently available. Please check back later.</p>
+        </div>
+    {% else %}
+        <form method="post" action="{{ url_for('patient.submit_questionnaire', condition=condition) }}" class="mb-5">
+            
+            {% for question in questions %}
+            <div class="card mb-4 question-card">
+                <div class="card-body">
+                    <h5 class="mb-3">{{ question.question_text }}</h5>
+                    
+                    {% if question.question_type == 'boolean' %}
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="q_{{ question.id }}" id="q_{{ question.id }}_yes" value="Yes" required>
+                            <label class="form-check-label" for="q_{{ question.id }}_yes">Yes</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="q_{{ question.id }}" id="q_{{ question.id }}_no" value="No" required>
+                            <label class="form-check-label" for="q_{{ question.id }}_no">No</label>
+                        </div>
+                    
+                    {% elif question.question_type == 'multiple_choice' %}
+                        {% set options = question.options|from_json %}
+                        {% if options %}
+                            {% for option in options %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="q_{{ question.id }}" id="q_{{ question.id }}_{{ loop.index }}" value="{{ option }}" required>
+                                    <label class="form-check-label" for="q_{{ question.id }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-danger">Error: No options available for this question.</div>
+                        {% endif %}
+                    
+                    {% elif question.question_type == 'numeric' %}
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="q_{{ question.id }}" placeholder="Enter a number" required>
+                        </div>
+                    
+                    {% else %} <!-- text -->
+                        <div class="input-group">
+                            <textarea class="form-control" name="q_{{ question.id }}" rows="2" required></textarea>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-2"></i>Submit Questionnaire
+                </button>
+            </div>
+        </form>
+        
+        <div class="disclaimer bg-light p-3 rounded mb-4">
+            <h6><i class="fas fa-exclamation-circle me-2"></i>Privacy Notice</h6>
+            <p class="mb-0 small">
+                Your responses to this questionnaire are kept confidential and used only to improve your health predictions.
+                This information is stored securely in compliance with healthcare privacy regulations and will not be shared
+                with third parties without your explicit consent.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add animation when questions come into view
+        const questionCards = document.querySelectorAll('.question-card');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate__animated', 'animate__fadeIn');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        questionCards.forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
+{% endblock %}
