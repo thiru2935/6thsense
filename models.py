@@ -2,6 +2,8 @@ from app import db
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+import enum
+import json
 
 # User role constants
 USER_ROLE_PATIENT = 'patient'
@@ -336,6 +338,179 @@ class PatientExternalMapping(db.Model):
     
     # Unique constraint to ensure a patient can only be mapped once to a specific external system
     __table_args__ = (db.UniqueConstraint('patient_id', 'system_id', name='uix_patient_system'),)
+
+
+# Advanced Features Models
+
+class MoodEntry(db.Model):
+    """User's daily mood log with emoji-based representation"""
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    mood_emoji = db.Column(db.String(10), nullable=False)  # Unicode emoji character
+    mood_value = db.Column(db.Integer, nullable=False)  # 1-5 scale (1:very bad, 5:excellent)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    patient = db.relationship('PatientProfile', backref=db.backref('mood_entries', cascade='all, delete-orphan'))
+    
+    @property
+    def emoji_description(self):
+        """Returns human-readable description based on mood value"""
+        descriptions = {
+            1: "Feeling very low",
+            2: "Not great",
+            3: "Okay",
+            4: "Good",
+            5: "Excellent"
+        }
+        return descriptions.get(self.mood_value, "Unknown")
+
+
+class WellnessJourney(db.Model):
+    """Tracks patient's progress through wellness milestones and achievements"""
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    total_points = db.Column(db.Integer, default=0)
+    current_level = db.Column(db.Integer, default=1)
+    milestone_progress = db.Column(db.Text)  # JSON of current milestone progress
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    patient = db.relationship('PatientProfile', backref=db.backref('wellness_journey', uselist=False))
+    badges = db.relationship('WellnessBadge', backref='journey', cascade='all, delete-orphan')
+
+
+class WellnessBadge(db.Model):
+    """Achievement badges awarded to patients for health goals"""
+    id = db.Column(db.Integer, primary_key=True)
+    journey_id = db.Column(db.Integer, db.ForeignKey('wellness_journey.id'), nullable=False)
+    badge_type = db.Column(db.String(50), nullable=False)  # e.g., "consistent_readings", "medication_adherence"
+    badge_level = db.Column(db.Integer, default=1)  # Bronze (1), Silver (2), Gold (3), etc.
+    badge_name = db.Column(db.String(100), nullable=False)
+    badge_description = db.Column(db.Text)
+    awarded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    icon_path = db.Column(db.String(255))
+    
+    @property
+    def level_name(self):
+        levels = {1: "Bronze", 2: "Silver", 3: "Gold", 4: "Platinum", 5: "Diamond"}
+        return levels.get(self.badge_level, "Level " + str(self.badge_level))
+
+
+class SymptomHeatmapEntry(db.Model):
+    """AI-powered symptom severity tracking with color coding"""
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    symptom_type = db.Column(db.String(100), nullable=False)  # e.g., "fatigue", "pain", "dizziness"
+    severity = db.Column(db.Integer, nullable=False)  # 0-10 scale
+    body_location = db.Column(db.String(100))  # For localized symptoms
+    color_code = db.Column(db.String(7))  # HTML color code (#RRGGBB)
+    reported_at = db.Column(db.DateTime, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+    
+    # Relationships
+    patient = db.relationship('PatientProfile', backref=db.backref('symptom_entries', cascade='all, delete-orphan'))
+    
+    @property
+    def severity_text(self):
+        """Returns text representation of severity level"""
+        severity_map = {
+            0: "None",
+            1: "Minimal",
+            2: "Very Mild",
+            3: "Mild",
+            4: "Mild to Moderate",
+            5: "Moderate",
+            6: "Moderate to Severe",
+            7: "Severe",
+            8: "Very Severe",
+            9: "Extreme",
+            10: "Unbearable"
+        }
+        return severity_map.get(self.severity, "Unknown")
+    
+    @property
+    def severity_color(self):
+        """Returns color based on severity if not explicitly set"""
+        if self.color_code:
+            return self.color_code
+            
+        # Generate color from green (low) to red (high)
+        if self.severity <= 3:
+            return "#4CAF50"  # Green
+        elif self.severity <= 5:
+            return "#FFC107"  # Yellow/Amber
+        elif self.severity <= 7:
+            return "#FF9800"  # Orange
+        else:
+            return "#F44336"  # Red
+
+
+class TreatmentRecommendation(db.Model):
+    """Advanced ML-generated personalized treatment recommendations"""
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    condition = db.Column(db.String(100), nullable=False)  # Target condition for this recommendation
+    recommendation_type = db.Column(db.String(50), nullable=False)  # medication, lifestyle, diet, exercise, monitoring
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    evidence_level = db.Column(db.String(50))  # e.g., "strong", "moderate", "limited"
+    confidence_score = db.Column(db.Float)  # AI model confidence (0-1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    is_viewed = db.Column(db.Boolean, default=False)
+    viewed_at = db.Column(db.DateTime)
+    
+    # Store model parameters as JSON
+    model_parameters = db.Column(db.Text)  # JSON string of parameters used for this recommendation
+    
+    # Relationships
+    patient = db.relationship('PatientProfile', backref=db.backref('treatment_recommendations', cascade='all, delete-orphan'))
+    
+    def get_parameters(self):
+        """Return model parameters as dictionary"""
+        if self.model_parameters:
+            try:
+                return json.loads(self.model_parameters)
+            except:
+                return {}
+        return {}
+    
+    def set_parameters(self, params_dict):
+        """Set model parameters from dictionary"""
+        if params_dict:
+            self.model_parameters = json.dumps(params_dict)
+
+
+class RiskFactorInteraction(db.Model):
+    """For interactive risk factor drill-down in animated health risk dashboard"""
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    prediction_id = db.Column(db.Integer, db.ForeignKey('prediction.id'), nullable=False)
+    risk_factor = db.Column(db.String(100), nullable=False)  # e.g., "blood_pressure", "glucose_levels"
+    current_value = db.Column(db.Float)  # Current value for this factor
+    ideal_value = db.Column(db.Float)  # Target/ideal value 
+    impact_score = db.Column(db.Float)  # How much this factor contributes to overall risk (0-100)
+    recommendations = db.Column(db.Text)  # JSON string of specific recommendations for this factor
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    patient = db.relationship('PatientProfile', backref=db.backref('risk_factor_interactions', cascade='all, delete-orphan'))
+    prediction = db.relationship('Prediction', backref=db.backref('risk_factors', cascade='all, delete-orphan'))
+    
+    def get_recommendations(self):
+        """Return recommendations as a list"""
+        if self.recommendations:
+            try:
+                return json.loads(self.recommendations)
+            except:
+                return []
+        return []
+
+
+# PatientExternalMapping is defined above
 
 
 # New models for health questionnaires
