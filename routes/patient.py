@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import current_user, login_required
 from datetime import datetime, timedelta
@@ -545,3 +546,31 @@ def submit_questionnaire(condition):
     # Redirect to prediction page to generate a new prediction with the questionnaire data
     flash('Thank you for completing the questionnaire. Generating your personalized health assessment...', 'success')
     return redirect(url_for('patient.ai_prediction', condition=condition))
+@patient_bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+@check_patient
+def profile():
+    """Patient profile page"""
+    patient = current_user.patient_profile
+    if not patient:
+        flash('Patient profile not found.', 'danger')
+        return redirect(url_for('index'))
+        
+    if request.method == 'POST':
+        # Process form data
+        current_user.first_name = request.form.get('first_name')
+        current_user.last_name = request.form.get('last_name')
+        
+        patient.date_of_birth = datetime.strptime(request.form.get('date_of_birth'), '%Y-%m-%d').date() if request.form.get('date_of_birth') else None
+        patient.gender = request.form.get('gender')
+        patient.contact_number = request.form.get('contact_number')
+        patient.emergency_contact = request.form.get('emergency_contact')
+        patient.address = request.form.get('address')
+        patient.preferred_language = request.form.get('preferred_language')
+        patient.diagnosis = request.form.get('diagnosis')
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('patient.profile'))
+        
+    return render_template('patient/profile.html', patient=patient)
