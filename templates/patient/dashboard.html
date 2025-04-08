@@ -1002,7 +1002,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token() }}'
+                    // No CSRF token needed for this request
                 },
                 body: JSON.stringify({ device_id: deviceId })
             })
