@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+import os
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, send_file
 from flask_login import current_user, login_required
 from datetime import datetime, timedelta
 from functools import wraps
@@ -11,6 +12,7 @@ from services.prediction import predict_risk_score
 from services.device_integration import sync_devices
 from services.alerts import check_readings_for_alerts
 from services.ai_predictions import predict_disease_risk
+from services.file_upload import save_uploaded_file, delete_health_record_file, get_file_path
 
 patient_bp = Blueprint('patient', __name__, url_prefix='/patient')
 
@@ -175,29 +177,7 @@ def readings():
     
     return render_template('patient/readings.html', patient=patient, readings=readings, reading_type=reading_type, days=days)
 
-@login_required
-def profile():
-    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
-    
-    if request.method == 'POST':
-        # Update user info
-        current_user.first_name = request.form.get('first_name')
-        current_user.last_name = request.form.get('last_name')
-        
-        # Update patient profile
-        patient.date_of_birth = datetime.strptime(request.form.get('date_of_birth'), '%Y-%m-%d') if request.form.get('date_of_birth') else None
-        patient.gender = request.form.get('gender')
-        patient.contact_number = request.form.get('contact_number')
-        patient.emergency_contact = request.form.get('emergency_contact')
-        patient.address = request.form.get('address')
-        patient.preferred_language = request.form.get('preferred_language')
-        patient.diagnosis = request.form.get('diagnosis')
-        
-        db.session.commit()
-        flash('Profile updated successfully!', 'success')
-        return redirect(url_for('patient.profile'))
-    
-    return render_template('patient/profile.html', patient=patient)
+# This function is now replaced by the route decorated function below
 
 @patient_bp.route('/medications')
 @login_required
@@ -342,6 +322,84 @@ def revoke_record_consent(record_id, consent_id):
     
     flash('Provider access revoked', 'success')
     return redirect(url_for('patient.view_health_record', record_id=record_id))
+
+@patient_bp.route('/health-records/upload', methods=['POST'])
+@login_required
+def upload_health_record():
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if 'file' not in request.files:
+        flash('No file part in the request', 'danger')
+        return redirect(url_for('patient.health_records'))
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        flash('No file selected', 'danger')
+        return redirect(url_for('patient.health_records'))
+    
+    title = request.form.get('title', 'Uploaded Health Record')
+    record_type = request.form.get('record_type', 'other')
+    
+    success, message, record_id = save_uploaded_file(
+        file=file,
+        patient_id=patient.id,
+        record_type=record_type,
+        title=title,
+        provider_id=None  # Patient upload has no provider
+    )
+    
+    if success:
+        flash('File uploaded successfully', 'success')
+    else:
+        flash(message, 'danger')
+        
+    return redirect(url_for('patient.health_records'))
+
+@patient_bp.route('/health-records/download/<int:record_id>')
+@login_required
+def download_health_record(record_id):
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    record = HealthRecord.query.get_or_404(record_id)
+    
+    # Check if user has access to this record
+    if record.patient_id != patient.id:
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('patient.health_records'))
+    
+    # Check if this is a file record
+    if not record.is_file_record or not record.file_path:
+        flash('No file associated with this record', 'warning')
+        return redirect(url_for('patient.view_health_record', record_id=record_id))
+    
+    file_path = get_file_path(record_id)
+    if not file_path or not os.path.exists(file_path):
+        flash('File not found', 'danger')
+        return redirect(url_for('patient.view_health_record', record_id=record_id))
+    
+    return send_file(file_path, 
+                    download_name=record.file_name,
+                    as_attachment=True)
+
+@patient_bp.route('/health-records/delete/<int:record_id>', methods=['POST'])
+@login_required
+def delete_health_record(record_id):
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    record = HealthRecord.query.get_or_404(record_id)
+    
+    # Check if user has access to this record
+    if record.patient_id != patient.id:
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('patient.health_records'))
+    
+    success, message = delete_health_record_file(record_id)
+    
+    if success:
+        flash('Record deleted successfully', 'success')
+    else:
+        flash(message, 'danger')
+        
+    return redirect(url_for('patient.health_records'))
 
 @patient_bp.route('/test-appointments')
 @login_required

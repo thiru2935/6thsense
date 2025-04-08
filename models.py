@@ -1,9 +1,10 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import enum
 import json
+import os
 
 # User role constants
 USER_ROLE_PATIENT = 'patient'
@@ -211,14 +212,56 @@ class HealthRecord(db.Model):
     patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
     record_type = db.Column(db.String(50), nullable=False)  # lab_result, clinical_note, prescription, radiology, etc.
     title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text, nullable=True)  # Can be null if file is attached
     recorded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
-    file_path = db.Column(db.String(255))  # Optional path to attached file
+    file_path = db.Column(db.String(255))  # Path to attached file
+    file_type = db.Column(db.String(50))  # pdf, jpg, png, docx, etc.
+    file_name = db.Column(db.String(255))  # Original filename
+    file_size = db.Column(db.Integer)  # Size in bytes
+    is_file_record = db.Column(db.Boolean, default=False)  # Flag to indicate if this is a file-based record
+    upload_date = db.Column(db.DateTime)  # When the file was uploaded
     
     # Relationships
     patient = db.relationship('PatientProfile', backref=db.backref('health_records', cascade='all, delete-orphan'))
-    provider = db.relationship('User', backref='recorded_health_records')
+    
+    @property
+    def file_extension(self):
+        if self.file_name:
+            return os.path.splitext(self.file_name)[1].lower()
+        return None
+        
+    @property
+    def is_image(self):
+        if self.file_extension:
+            return self.file_extension in ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+        return False
+        
+    @property
+    def is_pdf(self):
+        if self.file_extension:
+            return self.file_extension == '.pdf'
+        return False
+        
+    @property
+    def is_viewable(self):
+        return self.is_image or self.is_pdf
+        
+    @property
+    def file_size_formatted(self):
+        if not self.file_size:
+            return "Unknown"
+            
+        # Convert bytes to KB, MB as needed
+        if self.file_size < 1024:
+            return f"{self.file_size} bytes"
+        elif self.file_size < 1024 * 1024:
+            return f"{self.file_size / 1024:.1f} KB"
+        else:
+            return f"{self.file_size / (1024 * 1024):.1f} MB"
+            
+    # Relationships (additional)
+    provider = db.relationship('User', foreign_keys=[recorded_by], backref='recorded_health_records')
     consents = db.relationship('RecordConsent', backref='health_record', cascade='all, delete-orphan')
 
 

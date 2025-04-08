@@ -1,12 +1,14 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, send_file
 from flask_login import current_user, login_required
 from datetime import datetime, timedelta
+import os
 
 from app import db
 from models import (User, PatientProfile, ProviderProfile, ProviderPatientAssociation, 
                     Device, HealthReading, Medication, Alert, Prediction, HealthRecord, 
                     RecordConsent, TestAppointment)
 from services.prediction import predict_risk_score, get_patient_risk_factors
+from services.file_upload import save_uploaded_file, delete_health_record_file, get_file_path
 
 provider_bp = Blueprint('provider', __name__, url_prefix='/provider')
 
@@ -337,6 +339,47 @@ def view_patient_health_record(patient_id, record_id):
                           record=record,
                           recorded_by=recorded_by,
                           consent=consent)
+                          
+@provider_bp.route('/patient/<int:patient_id>/health-records/download/<int:record_id>')
+@login_required
+def download_patient_health_record(patient_id, record_id):
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check provider-patient association
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to download records for this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+    
+    # Check if provider has consent for this specific record
+    consent = RecordConsent.query.filter_by(
+        record_id=record_id,
+        provider_id=provider.id,
+        is_active=True
+    ).filter(RecordConsent.expires_at > datetime.utcnow()).first()
+    
+    if not consent:
+        flash('You do not have consent to download this health record', 'danger')
+        return redirect(url_for('provider.patient_health_records', patient_id=patient_id))
+    
+    record = HealthRecord.query.get_or_404(record_id)
+    
+    # Check if this is a file record
+    if not record.is_file_record or not record.file_path:
+        flash('No file associated with this record', 'warning')
+        return redirect(url_for('provider.view_patient_health_record', patient_id=patient_id, record_id=record_id))
+    
+    file_path = get_file_path(record_id)
+    if not file_path or not os.path.exists(file_path):
+        flash('File not found', 'danger')
+        return redirect(url_for('provider.view_patient_health_record', patient_id=patient_id, record_id=record_id))
+    
+    return send_file(file_path, 
+                    download_name=record.file_name,
+                    as_attachment=True)
 
 @provider_bp.route('/patient/<int:patient_id>/add-health-record', methods=['GET', 'POST'])
 @login_required
@@ -357,26 +400,48 @@ def add_patient_health_record(patient_id):
     if request.method == 'POST':
         record_type = request.form.get('record_type')
         title = request.form.get('title')
-        content = request.form.get('content')
         
-        if not all([record_type, title, content]):
-            flash('Please fill in all required fields', 'danger')
-            return redirect(url_for('provider.add_patient_health_record', patient_id=patient_id))
-        
-        # Create new health record
-        record = HealthRecord(
-            patient_id=patient_id,
-            record_type=record_type,
-            title=title,
-            content=content,
-            recorded_by=current_user.id
-        )
-        
-        db.session.add(record)
-        db.session.commit()
-        
-        flash('Health record added successfully', 'success')
-        return redirect(url_for('provider.patient_health_records', patient_id=patient_id))
+        # Check if we're handling a file upload or text content
+        if 'file' in request.files and request.files['file'].filename:
+            file = request.files['file']
+            
+            # Use the file upload service
+            success, message, record_id = save_uploaded_file(
+                file=file,
+                patient_id=patient_id,
+                record_type=record_type,
+                title=title,
+                provider_id=provider.id
+            )
+            
+            if success:
+                flash('Health record with file uploaded successfully', 'success')
+            else:
+                flash(message, 'danger')
+                
+            return redirect(url_for('provider.patient_health_records', patient_id=patient_id))
+        else:
+            # Regular text content record
+            content = request.form.get('content')
+            
+            if not all([record_type, title, content]):
+                flash('Please fill in all required fields', 'danger')
+                return redirect(url_for('provider.add_patient_health_record', patient_id=patient_id))
+            
+            # Create new health record
+            record = HealthRecord(
+                patient_id=patient_id,
+                record_type=record_type,
+                title=title,
+                content=content,
+                recorded_by=current_user.id
+            )
+            
+            db.session.add(record)
+            db.session.commit()
+            
+            flash('Health record added successfully', 'success')
+            return redirect(url_for('provider.patient_health_records', patient_id=patient_id))
     
     # Define record types for selection
     record_types = [

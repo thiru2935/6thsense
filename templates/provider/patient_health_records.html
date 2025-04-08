@@ -51,12 +51,22 @@
                             {% for record in created_records %}
                                 <tr>
                                     <td>{{ record.recorded_at.strftime('%b %d, %Y') }}</td>
-                                    <td>{{ record.title }}</td>
+                                    <td>
+                                        {% if record.is_file_record %}
+                                            <i class="fas fa-paperclip me-1 text-muted"></i>
+                                        {% endif %}
+                                        {{ record.title }}
+                                    </td>
                                     <td><span class="badge bg-info">{{ record.record_type|replace('_', ' ')|title }}</span></td>
                                     <td>
                                         <a href="{{ url_for('provider.view_patient_health_record', patient_id=patient.id, record_id=record.id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye me-1"></i>View
                                         </a>
+                                        {% if record.is_file_record %}
+                                        <a href="{{ url_for('provider.download_patient_health_record', patient_id=patient.id, record_id=record.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-download me-1"></i>Download
+                                        </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -93,13 +103,23 @@
                             {% for record in shared_records %}
                                 <tr>
                                     <td>{{ record.recorded_at.strftime('%b %d, %Y') }}</td>
-                                    <td>{{ record.title }}</td>
+                                    <td>
+                                        {% if record.is_file_record %}
+                                            <i class="fas fa-paperclip me-1 text-muted"></i>
+                                        {% endif %}
+                                        {{ record.title }}
+                                    </td>
                                     <td><span class="badge bg-info">{{ record.record_type|replace('_', ' ')|title }}</span></td>
                                     <td>Dr. {{ record.provider.get_full_name() }}</td>
                                     <td>
                                         <a href="{{ url_for('provider.view_patient_health_record', patient_id=patient.id, record_id=record.id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye me-1"></i>View
                                         </a>
+                                        {% if record.is_file_record %}
+                                        <a href="{{ url_for('provider.download_patient_health_record', patient_id=patient.id, record_id=record.id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-download me-1"></i>Download
+                                        </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
