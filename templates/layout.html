@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
@@ -16,75 +18,114 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- Modern App Header with Gradient -->
+    <header class="health-app-header">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-heartbeat me-2"></i>6th Sense
-            </a>
+            <div class="app-brand-wrapper py-3">
+                <a class="app-brand" href="{{ url_for('index') }}">
+                    <i class="fas fa-heartbeat pulse-icon me-2"></i>
+                    <span class="brand-text">6th Sense</span>
+                </a>
+                {% if current_user.is_authenticated %}
+                <span class="badge health-badge ms-2">
+                    {% if current_user.is_patient() %}
+                        Patient
+                    {% elif current_user.is_provider() %}
+                        Healthcare Provider  
+                    {% endif %}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    
+    <!-- Navigation - Redesigned for mobile-first health app experience -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home nav-icon"></i> Home
+                        </a>
                     </li>
                     {% if current_user.is_authenticated %}
                         {% if current_user.is_patient() %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.dashboard') }}">Dashboard</a>
+                                <a class="nav-link" href="{{ url_for('patient.dashboard') }}">
+                                    <i class="fas fa-chart-line nav-icon"></i> Dashboard
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.devices') }}">Devices</a>
+                                <a class="nav-link" href="{{ url_for('patient.devices') }}">
+                                    <i class="fas fa-mobile-alt nav-icon"></i> Devices
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.medications') }}">Medications</a>
+                                <a class="nav-link" href="{{ url_for('patient.medications') }}">
+                                    <i class="fas fa-pills nav-icon"></i> Medications
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.alerts') }}">Alerts</a>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for("patient.health_records") }}">Health Records</a>
+                                <a class="nav-link" href="{{ url_for('patient.alerts') }}">
+                                    <i class="fas fa-bell nav-icon"></i> Alerts
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for("patient.test_appointments") }}">Test Appointments</a>
+                                <a class="nav-link" href="{{ url_for('patient.health_records') }}">
+                                    <i class="fas fa-file-medical nav-icon"></i> Records
+                                </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('patient.test_appointments') }}">
+                                    <i class="fas fa-calendar-check nav-icon"></i> Appointments
+                                </a>
                             </li>
                         {% elif current_user.is_provider() %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('provider.dashboard') }}">Dashboard</a>
+                                <a class="nav-link" href="{{ url_for('provider.dashboard') }}">
+                                    <i class="fas fa-chart-line nav-icon"></i> Dashboard
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('provider.patients') }}">Patients</a>
+                                <a class="nav-link" href="{{ url_for('provider.patients') }}">
+                                    <i class="fas fa-users nav-icon"></i> Patients
+                                </a>
                             </li>
                         {% endif %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('chatbot.index') }}">Chatbot</a>
+                            <a class="nav-link" href="{{ url_for('chatbot.index') }}">
+                                <i class="fas fa-robot nav-icon"></i> AI Assistant
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+                            <a class="nav-link dropdown-toggle user-menu" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle user-icon"></i>
+                                <span class="username">{{ current_user.first_name or current_user.username }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 {% if current_user.is_patient() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('patient.profile') }}">Profile</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('patient.profile') }}"><i class="fas fa-id-card me-2"></i>My Profile</a></li>
                                 {% elif current_user.is_provider() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('provider.profile') }}">Profile</a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('provider.profile') }}"><i class="fas fa-id-card me-2"></i>My Profile</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                            <a class="nav-link btn btn-outline-info btn-sm me-2" href="{{ url_for('auth.login') }}">Login</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+                            <a class="nav-link btn btn-info btn-sm" href="{{ url_for('auth.register') }}">Register</a>
                         </li>
                     {% endif %}
                 </ul>

@@ -1,126 +1,416 @@
 {% extends "layout.html" %}
 
-{% block title %}Register - 6th Sense{% endblock %}
+{% block title %}Create Account - 6th Sense Health{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm mt-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create Account</h4>
+        <div class="col-lg-7">
+            <div class="auth-card register-card animate__animated animate__fadeIn">
+                <div class="auth-card-header">
+                    <div class="auth-logo">
+                        <i class="fas fa-heartbeat me-2"></i>
+                        <span class="auth-logo-text">6th Sense</span>
+                    </div>
+                    <h2 class="auth-title">Create Your Account</h2>
+                    <p class="auth-subtitle">Join 6th Sense to take control of your health</p>
                 </div>
-                <div class="card-body">
+                <div class="auth-card-body">
                     <form method="POST" action="{{ url_for('auth.register') }}" class="needs-validation" novalidate>
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3 mb-md-0">
-                                <label for="first_name" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter your first name" required>
-                                <div class="invalid-feedback">
-                                    Please enter your first name.
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="last_name" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter your last name" required>
-                                <div class="invalid-feedback">
-                                    Please enter your last name.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email Address</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
-                                <div class="invalid-feedback">
-                                    Please enter a valid email address.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
-                                <div class="invalid-feedback">
-                                    Please choose a username.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3 mb-md-0">
-                                <label for="password" class="form-label">Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                    <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required minlength="8">
-                                    <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#password">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Personal Information -->
+                        <div class="form-section mb-4">
+                            <h5 class="form-section-title">Personal Information</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control auth-input" id="first_name" name="first_name" placeholder="Enter your first name" required>
                                     <div class="invalid-feedback">
-                                        Password must be at least 8 characters.
+                                        Please enter your first name.
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="confirm_password" class="form-label">Confirm Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm password" required>
-                                    <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#confirm_password">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
+                                <div class="col-md-6">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control auth-input" id="last_name" name="last_name" placeholder="Enter your last name" required>
                                     <div class="invalid-feedback">
-                                        Passwords must match.
+                                        Please enter your last name.
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Account Information -->
+                        <div class="form-section mb-4">
+                            <h5 class="form-section-title">Account Information</h5>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <div class="input-group auth-input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" class="form-control auth-input" id="email" name="email" placeholder="Enter your email" required>
+                                    <div class="invalid-feedback">
+                                        Please enter a valid email address.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <div class="input-group auth-input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control auth-input" id="username" name="username" placeholder="Choose a username" required>
+                                    <div class="invalid-feedback">
+                                        Please choose a username.
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">Your username will be visible to healthcare providers.</small>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="password" class="form-label">Password</label>
+                                    <div class="input-group auth-input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        <input type="password" class="form-control auth-input" id="password" name="password" placeholder="Create a password" required minlength="8">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <div class="invalid-feedback">
+                                            Password must be at least 8 characters.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                                    <div class="input-group auth-input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                        <input type="password" class="form-control auth-input" id="confirm_password" name="confirm_password" placeholder="Confirm password" required>
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#confirm_password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <div class="invalid-feedback">
+                                            Passwords must match.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Account Type -->
+                        <div class="form-section mb-4">
+                            <h5 class="form-section-title">Account Type</h5>
+                            <div class="account-type-selection">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="account-type-option">
+                                            <input class="form-check-input account-type-input" type="radio" name="role" id="role_patient" value="patient" checked>
+                                            <label class="account-type-label" for="role_patient">
+                                                <div class="account-type-icon">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div class="account-type-info">
+                                                    <h6>Patient</h6>
+                                                    <p>Monitor health, connect devices, receive personalized insights</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="account-type-option">
+                                            <input class="form-check-input account-type-input" type="radio" name="role" id="role_provider" value="provider">
+                                            <label class="account-type-label" for="role_provider">
+                                                <div class="account-type-icon provider">
+                                                    <i class="fas fa-user-md"></i>
+                                                </div>
+                                                <div class="account-type-info">
+                                                    <h6>Healthcare Provider</h6>
+                                                    <p>Monitor patients, access health records, provide care</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
                         <div class="mb-4">
-                            <label class="form-label">Register as</label>
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="role" id="role_patient" value="patient" checked>
-                                        <label class="form-check-label" for="role_patient">
-                                            <i class="fas fa-user me-1"></i>Patient
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="role" id="role_provider" value="provider">
-                                        <label class="form-check-label" for="role_provider">
-                                            <i class="fas fa-user-md me-1"></i>Healthcare Provider
-                                        </label>
-                                    </div>
+                            <div class="form-check auth-checkbox">
+                                <input type="checkbox" class="form-check-input" id="terms" required>
+                                <label class="form-check-label terms-label" for="terms">
+                                    I agree to the <a href="#">Terms of Service</a>, <a href="#">Privacy Policy</a>, and <a href="#">HIPAA Authorization</a>
+                                </label>
+                                <div class="invalid-feedback">
+                                    You must agree to the terms to continue.
                                 </div>
                             </div>
                         </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="terms" required>
-                            <label class="form-check-label" for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
-                            <div class="invalid-feedback">
-                                You must agree to the terms to continue.
-                            </div>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
+                        
+                        <div class="d-grid mb-2">
+                            <button type="submit" class="btn btn-health btn-health-primary">
                                 <i class="fas fa-user-plus me-2"></i>Create Account
                             </button>
                         </div>
+                        
+                        <p class="security-disclaimer text-center">
+                            <i class="fas fa-shield-alt me-1"></i> Your health data is encrypted and securely stored
+                        </p>
                     </form>
                 </div>
-                <div class="card-footer text-center">
-                    <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
+                <div class="auth-card-footer">
+                    <p class="login-link">
+                        Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+/* Authentication Card Styles */
+.auth-card {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.1);
+}
+
+.auth-card-header {
+    padding: 2rem 2rem 1rem;
+    text-align: center;
+}
+
+.auth-logo {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+}
+
+.auth-logo i {
+    color: var(--health-primary);
+}
+
+.auth-logo-text {
+    background: linear-gradient(to right, var(--health-primary), var(--health-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: var(--health-secondary);
+    margin-bottom: 0;
+}
+
+.auth-card-body {
+    padding: 1.5rem 2rem 2rem;
+}
+
+.auth-input-group {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.auth-input-group .input-group-text {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: var(--health-secondary);
+}
+
+.auth-input {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    padding: 0.75rem 1rem;
+}
+
+.auth-input:focus {
+    box-shadow: none;
+    border-color: var(--health-primary);
+}
+
+.toggle-password {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: var(--health-secondary);
+}
+
+.toggle-password:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--health-primary);
+}
+
+.auth-checkbox .form-check-input:checked {
+    background-color: var(--health-primary);
+    border-color: var(--health-primary);
+}
+
+.auth-card-footer {
+    padding: 1.5rem 2rem;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.01);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.login-link {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+
+.login-link a {
+    color: var(--health-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 1.5rem;
+}
+
+.form-section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--health-info);
+}
+
+/* Account Type Selection */
+.account-type-selection {
+    margin-bottom: 1rem;
+}
+
+.account-type-option {
+    position: relative;
+    height: 100%;
+}
+
+.account-type-input {
+    position: absolute;
+    opacity: 0;
+    height: 0;
+    width: 0;
+}
+
+.account-type-label {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+    transition: all 0.3s;
+    cursor: pointer;
+    height: 100%;
+}
+
+.account-type-input:checked + .account-type-label {
+    background-color: rgba(44, 123, 229, 0.1);
+    border-color: var(--health-primary);
+}
+
+.account-type-icon {
+    width: 48px;
+    height: 48px;
+    background-color: rgba(44, 123, 229, 0.1);
+    color: var(--health-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.25rem;
+}
+
+.account-type-icon.provider {
+    background-color: rgba(0, 204, 142, 0.1);
+    color: var(--health-success);
+}
+
+.account-type-info {
+    flex: 1;
+}
+
+.account-type-info h6 {
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.account-type-info p {
+    margin-bottom: 0;
+    font-size: 0.85rem;
+    color: var(--health-secondary);
+}
+
+/* Terms of Service */
+.terms-label a {
+    color: var(--health-info);
+    text-decoration: none;
+}
+
+.terms-label a:hover {
+    text-decoration: underline;
+}
+
+.security-disclaimer {
+    font-size: 0.85rem;
+    color: var(--health-secondary);
+    margin-top: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .auth-card-header, .auth-card-body, .auth-card-footer {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    
+    .account-type-info p {
+        display: none;
+    }
+}
+</style>
+
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    const toggleButtons = document.querySelectorAll('.toggle-password');
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const passwordInput = document.querySelector(targetId);
+            
+            // Toggle input type
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                passwordInput.type = 'password';
+                this.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        });
+    });
+    
     // Custom validation for password matching
     const password = document.getElementById('password');
     const confirmPassword = document.getElementById('confirm_password');
@@ -135,6 +425,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     password.addEventListener('change', validatePasswordMatch);
     confirmPassword.addEventListener('keyup', validatePasswordMatch);
+    
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
 });
 </script>
+{% endblock %}
 {% endblock %}

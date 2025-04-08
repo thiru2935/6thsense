@@ -1,135 +1,150 @@
 {% extends 'layout.html' %}
 
-{% block title %}Patient Dashboard{% endblock %}
+{% block title %}Patient Dashboard - 6th Sense Health{% endblock %}
 
 {% block content %}
 <div class="container py-4">
-    <h1 class="mb-4">Welcome, {{ current_user.get_full_name() }}</h1>
+    <!-- Welcome Header with Health Summary -->
+    <div class="dashboard-welcome-header mb-4 animate__animated animate__fadeIn">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="welcome-title">
+                    Hello, <span class="text-gradient">{{ current_user.get_full_name() }}</span>
+                </h1>
+                <p class="welcome-subtitle">Here's your health overview for today</p>
+            </div>
+            <div class="col-lg-6 text-lg-end">
+                <div class="dashboard-date">
+                    <i class="fas fa-calendar-day me-2"></i> {{ now.strftime('%A, %B %d, %Y') }}
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Health Metrics Dashboard Cards -->
     <div class="row mb-4">
         <!-- Health Summary -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Health Summary</h5>
-                    <a href="{{ url_for('patient.readings') }}" class="btn btn-sm btn-outline-primary">View All</a>
+        <div class="col-md-8 mb-4">
+            <div class="dashboard-card card-accent-primary animate__animated animate__fadeInUp">
+                <div class="card-header">
+                    <i class="fas fa-heartbeat"></i> Health Summary
+                    <a href="{{ url_for('patient.readings') }}" class="float-end btn btn-sm btn-outline-info">View All</a>
                 </div>
                 <div class="card-body">
                     {% if latest_readings %}
                     <div class="row">
                         {% for reading in latest_readings[:3] %}
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100 {% if reading.is_abnormal %}border-danger{% endif %}">
-                                <div class="card-body text-center">
-                                    <h3 class="display-6 {% if reading.is_abnormal %}text-danger{% endif %}">
-                                        {% if reading.reading_type == 'blood_pressure' %}
-                                            {{ reading.value_systolic|int }}/{{ reading.value_diastolic|int }}
-                                        {% else %}
-                                            {{ reading.value|round(1) }}
-                                        {% endif %}
-                                    </h3>
-                                    <p class="text-muted mb-0">
-                                        {{ reading.reading_type|replace('_', ' ')|title }} <br>
-                                        <small>{{ reading.unit }}</small>
-                                    </p>
-                                    <small class="text-muted d-block mt-2">
-                                        {{ reading.timestamp.strftime('%b %d, %I:%M %p') }}
-                                    </small>
+                            <div class="health-metric-card {% if reading.is_abnormal %}reading-abnormal{% else %}reading-normal{% endif %}">
+                                <div class="metric-value {% if reading.is_abnormal %}text-danger{% endif %}">
+                                    {% if reading.reading_type == 'blood_pressure' %}
+                                        {{ reading.value_systolic|int }}/{{ reading.value_diastolic|int }}
+                                    {% else %}
+                                        {{ reading.value|round(1) }}
+                                    {% endif %}
+                                </div>
+                                <div class="metric-label">
+                                    {{ reading.reading_type|replace('_', ' ')|title }}
+                                    <span class="metric-unit">{{ reading.unit }}</span>
+                                </div>
+                                <div class="metric-timestamp">
+                                    <i class="far fa-clock"></i> {{ reading.timestamp.strftime('%b %d, %I:%M %p') }}
                                 </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     
-                    {% if risk_score is not none %}
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    <h6 class="card-subtitle mb-2 text-muted">Current Risk Score</h6>
-                                    <div class="risk-gauge" id="riskGauge" style="height: 150px;"></div>
+                    <!-- Health Matrix -->
+                    <div class="health-matrix mt-4">
+                        <div class="row align-items-center">
+                            {% if risk_score is not none %}
+                            <div class="col-md-5">
+                                <div class="risk-score-container 
+                                    {% if risk_score < 0.3 %}low{% elif risk_score < 0.7 %}medium{% else %}high{% endif %}">
+                                    <div class="risk-indicator 
+                                        {% if risk_score < 0.3 %}risk-low{% elif risk_score < 0.7 %}risk-medium{% else %}risk-high{% endif %}">
+                                        {{ (risk_score * 10)|int }}
+                                    </div>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <h6 class="risk-label">Overall Risk Score</h6>
+                                    <span class="risk-explanation">Based on your latest readings and health history</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h6 class="card-subtitle mb-2 text-muted">Key Risk Factors</h6>
-                                    <ul class="list-unstyled">
+                            <div class="col-md-7">
+                                <div class="key-risk-factors">
+                                    <h6 class="mb-3">Key Health Insights</h6>
+                                    <ul class="risk-factors-list">
                                         {% for factor in risk_factors[:3] %}
-                                        <li><i class="bi bi-exclamation-triangle text-warning me-2"></i> {{ factor }}</li>
+                                        <li>
+                                            <i class="fas fa-exclamation-triangle 
+                                                {% if risk_score < 0.3 %}text-success{% elif risk_score < 0.7 %}text-warning{% else %}text-danger{% endif %} me-2"></i> 
+                                            {{ factor }}
+                                        </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
                             </div>
+                            {% else %}
+                            <div class="col-12">
+                                <div class="missing-data-message text-center">
+                                    <i class="fas fa-chart-line missing-data-icon"></i>
+                                    <h6>Not enough data to generate health insights</h6>
+                                    <p>Please sync your devices or add more readings to get personalized health predictions</p>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
-                    
                     {% else %}
                     <div class="alert alert-info">
-                        No readings found. Please sync your devices or add readings manually.
+                        <i class="fas fa-info-circle me-2"></i> No readings found. Please sync your devices or add readings manually.
                     </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Devices -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Connected Devices</h5>
-                    <a href="{{ url_for('patient.devices') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+        <!-- Alerts Summary -->
+        <div class="col-md-4 mb-4">
+            <div class="dashboard-card card-accent-warning animate__animated animate__fadeInUp" data-delay="200">
+                <div class="card-header">
+                    <i class="fas fa-bell"></i> Recent Alerts
+                    <a href="{{ url_for('patient.alerts') }}" class="float-end btn btn-sm btn-outline-info">View All</a>
                 </div>
-                <div class="card-body">
-                    {% if devices %}
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Device</th>
-                                    <th>Status</th>
-                                    <th>Last Synced</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for device in devices %}
-                                <tr>
-                                    <td>
-                                        {{ device.device_type|replace('_', ' ')|title }}
-                                        <small class="text-muted d-block">{{ device.manufacturer }} {{ device.model }}</small>
-                                    </td>
-                                    <td>
-                                        {% if device.is_active %}
-                                        <span class="badge bg-success">Active</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">Inactive</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if device.last_synced %}
-                                        {{ device.last_synced.strftime('%b %d, %I:%M %p') }}
-                                        {% else %}
-                                        Never
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary sync-device" 
-                                                data-device-id="{{ device.id }}" 
-                                                data-device-type="{{ device.device_type }}">
-                                            Sync
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <div class="card-body p-0">
+                    {% if recent_alerts %}
+                    <div class="health-alerts-list">
+                        {% for alert in recent_alerts[:3] %}
+                        <div class="health-alert alert-severity-{{ alert.severity }} {% if alert.is_resolved %}alert-resolved{% endif %}">
+                            <div class="alert-icon">
+                                <i class="fas fa-{% if alert.severity == 'high' %}exclamation-circle{% elif alert.severity == 'medium' %}exclamation{% else %}info-circle{% endif %}"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">
+                                    {{ alert.alert_type|replace('_', ' ')|title }}
+                                    <span class="badge alert-badge-{{ alert.severity }}">{{ alert.severity|title }}</span>
+                                </div>
+                                <div class="alert-message">{{ alert.message }}</div>
+                                <div class="alert-timestamp">{{ alert.timestamp.strftime('%b %d, %I:%M %p') }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if recent_alerts|length > 3 %}
+                        <div class="more-alerts">
+                            <a href="{{ url_for('patient.alerts') }}" class="more-link">
+                                View {{ recent_alerts|length - 3 }} more alerts <i class="fas fa-chevron-right ms-1"></i>
+                            </a>
+                        </div>
+                        {% endif %}
                     </div>
                     {% else %}
-                    <div class="alert alert-info">
-                        No devices connected. <a href="{{ url_for('patient.devices') }}" class="alert-link">Add a device</a> to track your health metrics.
+                    <div class="empty-alerts-message">
+                        <i class="fas fa-check-circle"></i>
+                        <h6>No Recent Alerts</h6>
+                        <p>Your health readings are within normal ranges</p>
                     </div>
                     {% endif %}
                 </div>
@@ -137,48 +152,54 @@
         </div>
     </div>
 
+    <!-- Second Row: Devices, Medications -->
     <div class="row mb-4">
-        <!-- Alerts -->
+        <!-- Devices -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Recent Alerts</h5>
-                    <a href="{{ url_for('patient.alerts') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            <div class="dashboard-card card-accent-info animate__animated animate__fadeInUp" data-delay="300">
+                <div class="card-header">
+                    <i class="fas fa-mobile-alt"></i> Connected Devices
+                    <a href="{{ url_for('patient.devices') }}" class="float-end btn btn-sm btn-outline-info">Manage</a>
                 </div>
                 <div class="card-body">
-                    {% if recent_alerts %}
-                    <div class="list-group">
-                        {% for alert in recent_alerts %}
-                        <div class="list-group-item list-group-item-action 
-                                    {% if alert.severity == 'high' %}list-group-item-danger
-                                    {% elif alert.severity == 'medium' %}list-group-item-warning
-                                    {% else %}list-group-item-info{% endif %}
-                                    {% if alert.is_resolved %}text-muted{% endif %}">
-                            <div class="d-flex w-100 justify-content-between">
-                                <div>
-                                    <h6 class="mb-1">{{ alert.alert_type|replace('_', ' ')|title }}</h6>
-                                    <p class="mb-1">{{ alert.message }}</p>
-                                    <small>{{ alert.timestamp.strftime('%b %d, %I:%M %p') }}</small>
+                    {% if devices %}
+                    <div class="devices-grid">
+                        {% for device in devices %}
+                        <div class="device-item">
+                            <div class="device-icon">
+                                <i class="fas fa-{% if device.device_type == 'glucometer' %}syringe{% elif device.device_type == 'blood_pressure_monitor' %}heart{% elif device.device_type == 'fitness_tracker' %}running{% else %}laptop-medical{% endif %}"></i>
+                            </div>
+                            <div class="device-info">
+                                <h6 class="device-name">{{ device.device_type|replace('_', ' ')|title }}</h6>
+                                <div class="device-model">{{ device.manufacturer }} {{ device.model }}</div>
+                                <div class="device-status">
+                                    <span class="status-indicator {% if device.is_active %}active{% else %}inactive{% endif %}"></span>
+                                    {% if device.is_active %}Active{% else %}Inactive{% endif %}
                                 </div>
-                                <div>
-                                    {% if alert.is_resolved %}
-                                    <span class="badge bg-secondary">Resolved</span>
+                                <div class="device-last-synced">
+                                    {% if device.last_synced %}
+                                    Last synced: {{ device.last_synced.strftime('%b %d, %I:%M %p') }}
                                     {% else %}
-                                    <span class="badge 
-                                                {% if alert.severity == 'high' %}bg-danger
-                                                {% elif alert.severity == 'medium' %}bg-warning
-                                                {% else %}bg-info{% endif %}">
-                                        {{ alert.severity|title }}
-                                    </span>
+                                    Never synced
                                     {% endif %}
                                 </div>
+                                <button class="btn btn-health-primary btn-sm sync-device" 
+                                        data-device-id="{{ device.id }}" 
+                                        data-device-type="{{ device.device_type }}">
+                                    <i class="fas fa-sync-alt me-1"></i> Sync
+                                </button>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="alert alert-success">
-                        No recent alerts. Your health readings are within normal ranges.
+                    <div class="empty-devices-message">
+                        <i class="fas fa-link-slash"></i>
+                        <h6>No devices connected</h6>
+                        <p>Add a device to track your health metrics</p>
+                        <a href="{{ url_for('patient.devices') }}" class="btn btn-health-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i> Add Device
+                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -187,43 +208,40 @@
 
         <!-- Medications -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Medications</h5>
-                    <a href="{{ url_for('patient.medications') }}" class="btn btn-sm btn-outline-primary">Manage</a>
+            <div class="dashboard-card card-accent-success animate__animated animate__fadeInUp" data-delay="400">
+                <div class="card-header">
+                    <i class="fas fa-pills"></i> Medications
+                    <a href="{{ url_for('patient.medications') }}" class="float-end btn btn-sm btn-outline-info">Manage</a>
                 </div>
                 <div class="card-body">
                     {% if medications %}
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Medication</th>
-                                    <th>Dosage</th>
-                                    <th>Schedule</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for medication in medications %}
-                                <tr>
-                                    <td>{{ medication.name }}</td>
-                                    <td>{{ medication.dosage }}</td>
-                                    <td>{{ medication.frequency }}</td>
-                                    <td>
-                                        <a href="{{ url_for('patient.log_medication', med_id=medication.id) }}" 
-                                           class="btn btn-sm btn-outline-success">
-                                            Log taken
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="medications-list">
+                        {% for medication in medications %}
+                        <div class="medication-item">
+                            <div class="medication-info">
+                                <div class="medication-name">{{ medication.name }}</div>
+                                <div class="medication-details">
+                                    <span class="medication-dosage">{{ medication.dosage }}</span> • 
+                                    <span class="medication-frequency">{{ medication.frequency }}</span>
+                                </div>
+                            </div>
+                            <div class="medication-actions">
+                                <a href="{{ url_for('patient.log_medication', med_id=medication.id) }}" 
+                                   class="btn btn-health-success btn-sm">
+                                    <i class="fas fa-check me-1"></i> Log taken
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                     {% else %}
-                    <div class="alert alert-info">
-                        No medications found. <a href="{{ url_for('patient.medications') }}" class="alert-link">Add medications</a> to track your treatment.
+                    <div class="empty-medications-message">
+                        <i class="fas fa-prescription-bottle"></i>
+                        <h6>No medications found</h6>
+                        <p>Add medications to track your treatment</p>
+                        <a href="{{ url_for('patient.medications') }}" class="btn btn-health-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i> Add Medication
+                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -231,31 +249,42 @@
         </div>
     </div>
 
+    <!-- Third Row: Health Records, Upcoming Tests -->
     <div class="row mb-4">
         <!-- Health Records -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Health Records</h5>
-                    <a href="{{ url_for('patient.health_records') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            <div class="dashboard-card card-accent-purple animate__animated animate__fadeInUp" data-delay="500">
+                <div class="card-header">
+                    <i class="fas fa-file-medical"></i> Health Records
+                    <a href="{{ url_for('patient.health_records') }}" class="float-end btn btn-sm btn-outline-info">View All</a>
                 </div>
                 <div class="card-body">
                     {% if recent_records %}
-                    <div class="list-group">
+                    <div class="health-records-list">
                         {% for record in recent_records %}
-                        <a href="{{ url_for('patient.view_health_record', record_id=record.id) }}" class="list-group-item list-group-item-action">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ record.title }}</h6>
-                                <small>{{ record.recorded_at.strftime('%b %d, %Y') }}</small>
+                        <a href="{{ url_for('patient.view_health_record', record_id=record.id) }}" class="health-record-item">
+                            <div class="record-type">
+                                <i class="fas fa-{% if record.record_type == 'lab_result' %}flask{% elif record.record_type == 'clinical_note' %}clipboard{% elif record.record_type == 'prescription' %}prescription{% elif record.record_type == 'radiology' %}x-ray{% else %}file-medical{% endif %}"></i>
                             </div>
-                            <p class="mb-1">{{ record.record_type|replace('_', ' ')|title }}</p>
-                            <small>Added by Dr. {{ record.provider.last_name }}</small>
+                            <div class="record-info">
+                                <div class="record-title">{{ record.title }}</div>
+                                <div class="record-metadata">
+                                    <span class="record-category">{{ record.record_type|replace('_', ' ')|title }}</span>
+                                    <span class="record-date">{{ record.recorded_at.strftime('%b %d, %Y') }}</span>
+                                </div>
+                                <div class="record-provider">Added by Dr. {{ record.provider.last_name }}</div>
+                            </div>
+                            <div class="record-view">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
                         </a>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="alert alert-info">
-                        No health records found. Your healthcare provider will add records during your visits.
+                    <div class="empty-records-message">
+                        <i class="fas fa-folder-open"></i>
+                        <h6>No health records found</h6>
+                        <p>Your healthcare provider will add records during your visits</p>
                     </div>
                     {% endif %}
                 </div>
@@ -264,37 +293,53 @@
 
         <!-- Upcoming Tests -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Upcoming Tests</h5>
-                    <div>
-                        <a href="{{ url_for('patient.book_test') }}" class="btn btn-sm btn-outline-primary me-2">Book Test</a>
-                        <a href="{{ url_for('patient.test_appointments') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            <div class="dashboard-card card-accent-teal animate__animated animate__fadeInUp" data-delay="600">
+                <div class="card-header">
+                    <i class="fas fa-calendar-check"></i> Upcoming Tests
+                    <div class="float-end">
+                        <a href="{{ url_for('patient.book_test') }}" class="btn btn-sm btn-outline-info me-2">Book Test</a>
+                        <a href="{{ url_for('patient.test_appointments') }}" class="btn btn-sm btn-outline-info">View All</a>
                     </div>
                 </div>
                 <div class="card-body">
                     {% if upcoming_tests %}
-                    <div class="list-group">
+                    <div class="appointments-list">
                         {% for test in upcoming_tests %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ test.test_type }}</h6>
-                                <small>
-                                    {% if test.is_confirmed %}
-                                    <span class="badge bg-success">Confirmed</span>
-                                    {% else %}
-                                    <span class="badge bg-warning">Pending</span>
-                                    {% endif %}
-                                </small>
+                        <div class="appointment-item">
+                            <div class="appointment-icon">
+                                <i class="fas fa-vial"></i>
                             </div>
-                            <p class="mb-1">{{ test.scheduled_date.strftime('%b %d, %Y - %I:%M %p') }}</p>
-                            <small class="text-muted">{{ test.location }}</small>
+                            <div class="appointment-info">
+                                <div class="appointment-type">{{ test.test_type }}</div>
+                                <div class="appointment-date">
+                                    <i class="far fa-calendar-alt me-1"></i> 
+                                    {{ test.scheduled_date.strftime('%b %d, %Y') }}
+                                </div>
+                                <div class="appointment-time">
+                                    <i class="far fa-clock me-1"></i> 
+                                    {{ test.scheduled_date.strftime('%I:%M %p') }}
+                                </div>
+                                <div class="appointment-location">
+                                    <i class="fas fa-map-marker-alt me-1"></i> 
+                                    {{ test.location }}
+                                </div>
+                            </div>
+                            <div class="appointment-status">
+                                <span class="status-badge {% if test.is_confirmed %}confirmed{% else %}pending{% endif %}">
+                                    {% if test.is_confirmed %}Confirmed{% else %}Pending{% endif %}
+                                </span>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="alert alert-info">
-                        No upcoming tests scheduled. <a href="{{ url_for('patient.book_test') }}" class="alert-link">Book a test</a> to monitor your health.
+                    <div class="empty-appointments-message">
+                        <i class="fas fa-calendar"></i>
+                        <h6>No upcoming tests scheduled</h6>
+                        <p>Book a test to monitor your health</p>
+                        <a href="{{ url_for('patient.book_test') }}" class="btn btn-health-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i> Book Test
+                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -303,205 +348,718 @@
     </div>
 
     <!-- AI-powered Predictions Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">AI-powered Health Predictions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Diabetes Risk</h5>
-                                    <p class="card-text">Get personalized diabetes risk assessment based on your health data</p>
-                                    <a href="{{ url_for('patient.ai_prediction', condition='diabetes') }}" class="btn btn-primary">Check Risk</a>
-                                </div>
+    <div class="dashboard-card mb-4 animate__animated animate__fadeInUp" data-delay="700">
+        <div class="card-header">
+            <i class="fas fa-brain"></i> AI-powered Health Predictions
+        </div>
+        <div class="card-body">
+            <div class="ai-predictions-container">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="prediction-card diabetes">
+                            <div class="prediction-icon">
+                                <i class="fas fa-tint"></i>
                             </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Hypertension Risk</h5>
-                                    <p class="card-text">Assess your likelihood of developing high blood pressure</p>
-                                    <a href="{{ url_for('patient.ai_prediction', condition='hypertension') }}" class="btn btn-primary">Check Risk</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title">Cardiovascular Risk</h5>
-                                    <p class="card-text">Evaluate your heart health and cardiovascular disease risk</p>
-                                    <a href="{{ url_for('patient.ai_prediction', condition='cardiovascular') }}" class="btn btn-primary">Check Risk</a>
-                                </div>
+                            <div class="prediction-content">
+                                <h5 class="prediction-title">Diabetes Risk</h5>
+                                <p class="prediction-description">Get personalized diabetes risk assessment based on your health data</p>
+                                <a href="{{ url_for('patient.ai_prediction', condition='diabetes') }}" class="btn btn-health-primary">
+                                    <i class="fas fa-chart-bar me-1"></i> Check Risk
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <div class="text-center mt-3">
-                        <a href="{{ url_for('patient.predictions') }}" class="btn btn-outline-primary">View All Predictions</a>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="prediction-card hypertension">
+                            <div class="prediction-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="prediction-content">
+                                <h5 class="prediction-title">Hypertension Risk</h5>
+                                <p class="prediction-description">Assess your likelihood of developing high blood pressure</p>
+                                <a href="{{ url_for('patient.ai_prediction', condition='hypertension') }}" class="btn btn-health-primary">
+                                    <i class="fas fa-chart-bar me-1"></i> Check Risk
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="prediction-card cardiovascular">
+                            <div class="prediction-icon">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                            <div class="prediction-content">
+                                <h5 class="prediction-title">Cardiovascular Risk</h5>
+                                <p class="prediction-description">Evaluate your heart health and cardiovascular disease risk</p>
+                                <a href="{{ url_for('patient.ai_prediction', condition='cardiovascular') }}" class="btn btn-health-primary">
+                                    <i class="fas fa-chart-bar me-1"></i> Check Risk
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Health Matrix Visualizations -->
-    <div class="row mb-4">
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Health Readings Distribution</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="readingsDistributionChart" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Health Records by Type</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="recordTypesChart" height="300"></canvas>
+                
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('patient.predictions') }}" class="btn btn-outline-info">
+                        <i class="fas fa-history me-1"></i> View All Predictions
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
+
+<!-- Dashboard specific styling -->
+<style>
+/* Dashboard Welcome Header */
+.dashboard-welcome-header {
+    margin-bottom: 2rem;
+}
+
+.welcome-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.welcome-subtitle {
+    color: var(--health-secondary);
+    font-size: 1.1rem;
+}
+
+.dashboard-date {
+    font-size: 1.1rem;
+    color: var(--health-secondary);
+    background-color: rgba(255, 255, 255, 0.05);
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+}
+
+/* Health Metrics */
+.health-metric-card {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    text-align: center;
+    height: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+}
+
+.health-metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--health-card-shadow);
+}
+
+.metric-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.metric-unit {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--health-secondary);
+    font-weight: normal;
+}
+
+.metric-timestamp {
+    font-size: 0.75rem;
+    color: var(--health-secondary);
+}
+
+.reading-normal {
+    background-color: rgba(0, 204, 142, 0.05);
+    border: 1px solid rgba(0, 204, 142, 0.1);
+}
+
+.reading-abnormal {
+    background-color: rgba(245, 50, 92, 0.05);
+    border: 1px solid rgba(245, 50, 92, 0.1);
+}
+
+/* Risk Score */
+.health-matrix {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.risk-label {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.risk-explanation {
+    font-size: 0.8rem;
+    color: var(--health-secondary);
+}
+
+.risk-factors-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.risk-factors-list li {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    line-height: 1.5;
+}
+
+.risk-factors-list li i {
+    margin-top: 0.25rem;
+}
+
+.missing-data-message {
+    padding: 2rem;
+}
+
+.missing-data-icon {
+    font-size: 2.5rem;
+    color: var(--health-secondary);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Alerts */
+.health-alerts-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.health-alert {
+    padding: 1rem;
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.alert-resolved {
+    opacity: 0.6;
+}
+
+.alert-icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.alert-severity-high .alert-icon {
+    color: var(--health-danger);
+}
+
+.alert-severity-medium .alert-icon {
+    color: var(--health-warning);
+}
+
+.alert-severity-low .alert-icon {
+    color: var(--health-info);
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.alert-badge-high {
+    background-color: rgba(245, 50, 92, 0.1);
+    color: var(--health-danger);
+}
+
+.alert-badge-medium {
+    background-color: rgba(255, 171, 0, 0.1);
+    color: var(--health-warning);
+}
+
+.alert-badge-low {
+    background-color: rgba(0, 184, 217, 0.1);
+    color: var(--health-info);
+}
+
+.alert-message {
+    margin-bottom: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.alert-timestamp {
+    font-size: 0.75rem;
+    color: var(--health-secondary);
+}
+
+.more-alerts {
+    padding: 0.75rem;
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.more-link {
+    color: var(--health-info);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.more-link:hover {
+    text-decoration: underline;
+}
+
+.empty-alerts-message {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-alerts-message i {
+    font-size: 2.5rem;
+    color: var(--health-success);
+    margin-bottom: 1rem;
+}
+
+/* Devices */
+.devices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.device-item {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+}
+
+.device-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--health-card-shadow);
+}
+
+.device-icon {
+    width: 50px;
+    height: 50px;
+    background-color: rgba(44, 123, 229, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 1rem;
+    color: var(--health-primary);
+    font-size: 1.25rem;
+}
+
+.device-info {
+    flex: 1;
+}
+
+.device-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.device-model {
+    font-size: 0.8rem;
+    color: var(--health-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.device-status {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.active {
+    background-color: var(--health-success);
+}
+
+.status-indicator.inactive {
+    background-color: var(--health-secondary);
+}
+
+.device-last-synced {
+    font-size: 0.75rem;
+    color: var(--health-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.empty-devices-message {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-devices-message i {
+    font-size: 2.5rem;
+    color: var(--health-secondary);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Medications */
+.medications-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.medication-item {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.medication-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.medication-details {
+    font-size: 0.85rem;
+    color: var(--health-secondary);
+}
+
+.empty-medications-message {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-medications-message i {
+    font-size: 2.5rem;
+    color: var(--health-secondary);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Health Records */
+.health-records-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.health-record-item {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+}
+
+.health-record-item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.record-type {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(137, 87, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 1rem;
+    color: var(--health-purple);
+    font-size: 1.1rem;
+}
+
+.record-info {
+    flex: 1;
+}
+
+.record-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.record-metadata {
+    font-size: 0.85rem;
+    color: var(--health-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.record-category {
+    margin-right: 1rem;
+}
+
+.record-provider {
+    font-size: 0.8rem;
+    color: var(--health-secondary);
+}
+
+.record-view {
+    color: var(--health-secondary);
+}
+
+.empty-records-message {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-records-message i {
+    font-size: 2.5rem;
+    color: var(--health-secondary);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Appointments */
+.appointments-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.appointment-item {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+}
+
+.appointment-icon {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(2, 168, 181, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 1rem;
+    color: var(--health-teal);
+    font-size: 1.1rem;
+}
+
+.appointment-info {
+    flex: 1;
+}
+
+.appointment-type {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.appointment-date, .appointment-time, .appointment-location {
+    font-size: 0.85rem;
+    color: var(--health-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 50px;
+}
+
+.status-badge.confirmed {
+    background-color: rgba(0, 204, 142, 0.1);
+    color: var(--health-success);
+}
+
+.status-badge.pending {
+    background-color: rgba(255, 171, 0, 0.1);
+    color: var(--health-warning);
+}
+
+.empty-appointments-message {
+    padding: 3rem 1rem;
+    text-align: center;
+}
+
+.empty-appointments-message i {
+    font-size: 2.5rem;
+    color: var(--health-secondary);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* AI Predictions */
+.ai-predictions-container {
+    padding: 0.5rem;
+}
+
+.prediction-card {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 0.75rem;
+    height: 100%;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+}
+
+.prediction-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--health-card-shadow);
+}
+
+.prediction-card.diabetes {
+    border-left: 4px solid #8957ff;
+}
+
+.prediction-card.hypertension {
+    border-left: 4px solid #f5325c;
+}
+
+.prediction-card.cardiovascular {
+    border-left: 4px solid #ffab00;
+}
+
+.prediction-icon {
+    margin-bottom: 1.25rem;
+    text-align: center;
+}
+
+.prediction-icon i {
+    font-size: 2.5rem;
+    color: var(--health-primary);
+    background: linear-gradient(135deg, var(--health-primary), var(--health-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.prediction-content {
+    text-align: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.prediction-title {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.prediction-description {
+    color: var(--health-secondary);
+    margin-bottom: 1.5rem;
+    flex: 1;
+}
+
+@media (max-width: 768px) {
+    .welcome-title {
+        font-size: 1.75rem;
+    }
+
+    .dashboard-date {
+        margin-top: 1rem;
+    }
+
+    .device-item {
+        margin-bottom: 1rem;
+    }
+
+    .prediction-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-gauge@0.3.0/dist/chartjs-gauge.min.js"></script>
-<script src="/static/js/charts.js"></script>
-<script src="/static/js/wearable.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Setup sync functionality
-        const syncButtons = document.querySelectorAll('.sync-device');
-        syncButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const deviceId = this.getAttribute('data-device-id');
-                const deviceType = this.getAttribute('data-device-type');
-                
-                // Show loading state
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Syncing...';
-                
-                // Sync the device
-                syncDevice(deviceId, deviceType)
-                    .then(result => {
-                        // Show success
-                        this.innerHTML = '<i class="bi bi-check"></i> Synced';
-                        this.classList.remove('btn-outline-primary');
-                        this.classList.add('btn-success');
-                        
-                        // Reload after 2 seconds
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    })
-                    .catch(error => {
-                        // Show error
-                        this.innerHTML = '<i class="bi bi-x"></i> Failed';
-                        this.classList.remove('btn-outline-primary');
-                        this.classList.add('btn-danger');
-                        console.error('Sync error:', error);
-                    });
+document.addEventListener('DOMContentLoaded', function() {
+    // Device sync functionality
+    const syncButtons = document.querySelectorAll('.sync-device');
+    syncButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const deviceId = this.getAttribute('data-device-id');
+            const deviceType = this.getAttribute('data-device-type');
+            
+            // Visual feedback - change button text
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Syncing...';
+            this.disabled = true;
+            
+            // Send sync request to the server
+            fetch('{{ url_for("patient.sync_patient_devices") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ device_id: deviceId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showToast('Device synced successfully', 'success');
+                    
+                    // Reload the page after a delay to show updated readings
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Show error message and reset button
+                    showToast('Error: ' + data.message, 'danger');
+                    this.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Retry';
+                    this.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error connecting to the server', 'danger');
+                this.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Retry';
+                this.disabled = false;
             });
         });
-        
-        // Create risk gauge if element exists
-        {% if risk_score is not none %}
-        createRiskGaugeChart('riskGauge', {{ risk_score }});
-        {% endif %}
-        
-        // Reading types distribution chart
-        {% if reading_types_dict %}
-        const readingTypes = {
-            labels: [{% for key, value in reading_types_dict.items() %}'{{ key|replace("_", " ")|title }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-            data: [{% for key, value in reading_types_dict.items() %}{{ value }}{% if not loop.last %}, {% endif %}{% endfor %}]
-        };
-        
-        new Chart(document.getElementById('readingsDistributionChart'), {
-            type: 'pie',
-            data: {
-                labels: readingTypes.labels,
-                datasets: [{
-                    data: readingTypes.data,
-                    backgroundColor: [
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(255, 99, 132, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(255, 99, 132, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                    }
-                }
-            }
-        });
-        {% endif %}
-        
-        // Health Records by Type
-        {% if record_types_dict %}
-        const recordTypes = {
-            labels: [{% for key, value in record_types_dict.items() %}'{{ key|replace('_', ' ')|title }}'{% if not loop.last %}, {% endif %}{% endfor %}],
-            data: [{% for key, value in record_types_dict.items() %}{{ value }}{% if not loop.last %}, {% endif %}{% endfor %}]
-        };
-        
-        new Chart(document.getElementById('recordTypesChart'), {
-            type: 'doughnut',
-            data: {
-                labels: recordTypes.labels,
-                datasets: [{
-                    data: recordTypes.data,
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.7)',
-                        'rgba(255, 159, 64, 0.7)',
-                        'rgba(255, 205, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(153, 102, 255, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(255, 159, 64, 1)',
-                        'rgba(255, 205, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(153, 102, 255, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                    }
-                }
-            }
-        });
-        {% endif %}
     });
+    
+    // Toast notification function
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 3000 });
+        bsToast.show();
+        
+        // Remove toast from DOM after it's hidden
+        toast.addEventListener('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+});
 </script>
+{% endblock %}
 {% endblock %}

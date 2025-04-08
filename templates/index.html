@@ -3,125 +3,657 @@
 {% block title %}6th Sense - AI-Powered Chronic Disease Management{% endblock %}
 
 {% block content %}
-<div class="container">
-    <!-- Hero Section -->
-    <section class="py-5 text-center">
-        <div class="row py-lg-5">
-            <div class="col-lg-8 col-md-10 mx-auto">
-                <h1 class="fw-bold">AI-Powered Health Management</h1>
-                <p class="lead text-body-secondary">
-                    Revolutionizing chronic disease management with AI, wearable integration, and predictive analytics.
+<!-- Modern Hero Section with Wave Pattern -->
+<section class="health-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content animate__animated animate__fadeInLeft">
+                <h1 class="hero-title">Intelligent Health<br><span class="hero-highlight">Management</span></h1>
+                <p class="hero-subtitle">
+                    Revolutionizing chronic disease care with AI, wearable integration, and predictive analytics for personalized health journeys.
                 </p>
                 {% if not current_user.is_authenticated %}
-                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4 gap-3">Get Started</a>
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg px-4">Login</a>
+                <div class="hero-cta">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-health btn-health-primary">
+                        <i class="fas fa-user-plus me-2"></i> Get Started
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-health btn-outline-light ms-3">
+                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                    </a>
                 </div>
                 {% else %}
-                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <div class="hero-cta">
                     {% if current_user.is_patient() %}
-                    <a href="{{ url_for('patient.dashboard') }}" class="btn btn-primary btn-lg px-4 gap-3">Go to Dashboard</a>
+                    <a href="{{ url_for('patient.dashboard') }}" class="btn btn-health btn-health-primary">
+                        <i class="fas fa-chart-line me-2"></i> My Dashboard
+                    </a>
                     {% elif current_user.is_provider() %}
-                    <a href="{{ url_for('provider.dashboard') }}" class="btn btn-primary btn-lg px-4 gap-3">Go to Dashboard</a>
+                    <a href="{{ url_for('provider.dashboard') }}" class="btn btn-health btn-health-primary">
+                        <i class="fas fa-stethoscope me-2"></i> Provider Dashboard
+                    </a>
                     {% endif %}
                 </div>
                 {% endif %}
             </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="py-5">
-        <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
-            <div class="col d-flex align-items-start">
-                <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3 p-3 rounded">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div>
-                    <h3 class="fs-2 text-body-emphasis">Predictive Analytics</h3>
-                    <p>Our AI-powered platform analyzes your health data to predict trends and detect early complications, helping you stay ahead of your condition.</p>
-                </div>
-            </div>
-            <div class="col d-flex align-items-start">
-                <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3 p-3 rounded">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
-                <div>
-                    <h3 class="fs-2 text-body-emphasis">Device Integration</h3>
-                    <p>Seamlessly connect your glucometers, BP monitors, and fitness trackers for automatic data collection and real-time monitoring.</p>
-                </div>
-            </div>
-            <div class="col d-flex align-items-start">
-                <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3 p-3 rounded">
-                    <i class="fas fa-bell"></i>
-                </div>
-                <div>
-                    <h3 class="fs-2 text-body-emphasis">Smart Alerts</h3>
-                    <p>Receive timely notifications for abnormal readings, medication reminders, and appointment schedules to keep your health on track.</p>
+            <div class="col-lg-6 hero-illustration animate__animated animate__fadeInRight">
+                <div class="hero-image-container">
+                    <div class="hero-pulse-effect"></div>
+                    <div class="hero-icon-container">
+                        <i class="fas fa-heartbeat hero-icon-pulse"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+    <div class="wave-divider">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 150">
+            <path fill="#0d1117" fill-opacity="1" d="M0,128L48,112C96,96,192,64,288,53.3C384,43,480,53,576,69.3C672,85,768,107,864,101.3C960,96,1056,64,1152,48C1248,32,1344,32,1392,32L1440,32L1440,150L1392,150C1344,150,1248,150,1152,150C1056,150,960,150,864,150C768,150,672,150,576,150C480,150,384,150,288,150C192,150,96,150,48,150L0,150Z"></path>
+        </svg>
+    </div>
+</section>
 
-    <!-- Users Section -->
-    <section class="py-5">
-        <h2 class="text-center mb-5">Who Benefits from 6th Sense?</h2>
+<!-- Modern Feature Cards -->
+<section class="features-section py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <h2 class="section-title">Powerful <span class="text-gradient">Features</span></h2>
+            <p class="section-subtitle">Our platform combines cutting-edge technology with intuitive design</p>
+        </div>
+        
         <div class="row g-4">
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-user me-2"></i>For Patients</h5>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item">Intuitive dashboard showing your health trends</li>
-                            <li class="list-group-item">Personalized insights and recommendations</li>
-                            <li class="list-group-item">Medication and appointment reminders</li>
-                            <li class="list-group-item">Secure communication with healthcare providers</li>
-                            <li class="list-group-item">AI chatbot for answering health queries</li>
-                        </ul>
-                        {% if not current_user.is_authenticated %}
-                        <div class="mt-3">
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register as Patient</a>
-                        </div>
-                        {% endif %}
+            <div class="col-md-4">
+                <div class="feature-card animate__animated animate__fadeInUp" data-delay="100">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-brain feature-icon"></i>
                     </div>
+                    <h3 class="feature-title">AI Predictions</h3>
+                    <p class="feature-description">
+                        Our AI analyzes your health data to predict trends and detect early complications before they become serious issues.
+                    </p>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="fas fa-user-md me-2"></i>For Healthcare Providers</h5>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item">Clinical dashboard with real-time patient monitoring</li>
-                            <li class="list-group-item">Risk scoring and early complication detection</li>
-                            <li class="list-group-item">Treatment adherence tracking</li>
-                            <li class="list-group-item">Population health analytics</li>
-                            <li class="list-group-item">Secure API integration with hospital systems</li>
-                        </ul>
-                        {% if not current_user.is_authenticated %}
-                        <div class="mt-3">
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register as Provider</a>
-                        </div>
-                        {% endif %}
+            
+            <div class="col-md-4">
+                <div class="feature-card animate__animated animate__fadeInUp" data-delay="200">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-mobile-alt feature-icon"></i>
                     </div>
+                    <h3 class="feature-title">Device Integration</h3>
+                    <p class="feature-description">
+                        Seamlessly connect your medical devices and wearables for automatic data collection and real-time monitoring.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card animate__animated animate__fadeInUp" data-delay="300">
+                    <div class="feature-icon-wrapper">
+                        <i class="fas fa-bell feature-icon"></i>
+                    </div>
+                    <h3 class="feature-title">Smart Alerts</h3>
+                    <p class="feature-description">
+                        Receive personalized notifications for abnormal readings, medication reminders, and appointment schedules.
+                    </p>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Security and Compliance Section -->
-    <section class="py-5">
-        <div class="p-5 text-center bg-body-tertiary rounded-3">
-            <i class="fas fa-shield-alt fa-4x mb-3 text-primary"></i>
-            <h2 class="text-body-emphasis">Security & Compliance</h2>
-            <p class="col-lg-8 mx-auto fs-5 text-muted">
-                Your health data deserves the highest level of protection. 6th Sense is fully compliant with HIPAA and GDPR standards, ensuring your information is always secure.
-            </p>
-            <div class="d-inline-flex gap-2 mb-5">
-                <i class="fas fa-lock fa-2x text-primary"></i>
-                <i class="fas fa-user-shield fa-2x text-primary"></i>
-                <i class="fas fa-key fa-2x text-primary"></i>
+<!-- For Whom Section -->
+<section class="audience-section py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <h2 class="section-title">Who <span class="text-gradient">Benefits?</span></h2>
+            <p class="section-subtitle">Tailored solutions for patients and healthcare providers</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="audience-card patient-card animate__animated animate__fadeInLeft">
+                    <div class="audience-card-header">
+                        <div class="audience-icon-wrapper">
+                            <i class="fas fa-user audience-icon"></i>
+                        </div>
+                        <h3 class="audience-title">For Patients</h3>
+                    </div>
+                    <div class="audience-card-body">
+                        <ul class="audience-feature-list">
+                            <li><i class="fas fa-check-circle list-icon"></i> Intuitive dashboard showing your health trends</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> Personalized insights and AI-powered recommendations</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> Medication tracking and smart reminders</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> Secure communication with healthcare providers</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> AI chatbot for answering health queries 24/7</li>
+                        </ul>
+                        {% if not current_user.is_authenticated %}
+                        <div class="audience-cta">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-health btn-health-primary">
+                                <i class="fas fa-user-plus me-2"></i> Register as Patient
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="audience-card provider-card animate__animated animate__fadeInRight">
+                    <div class="audience-card-header">
+                        <div class="audience-icon-wrapper">
+                            <i class="fas fa-user-md audience-icon"></i>
+                        </div>
+                        <h3 class="audience-title">For Healthcare Providers</h3>
+                    </div>
+                    <div class="audience-card-body">
+                        <ul class="audience-feature-list">
+                            <li><i class="fas fa-check-circle list-icon"></i> Clinical dashboard with real-time patient monitoring</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> Risk scoring and early complication detection</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> Treatment adherence tracking with alerts</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> Population health analytics and insights</li>
+                            <li><i class="fas fa-check-circle list-icon"></i> Secure API integration with hospital systems</li>
+                        </ul>
+                        {% if not current_user.is_authenticated %}
+                        <div class="audience-cta">
+                            <a href="{{ url_for('auth.register') }}" class="btn btn-health btn-health-primary">
+                                <i class="fas fa-user-plus me-2"></i> Register as Provider
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
-    </section>
-</div>
+    </div>
+</section>
+
+<!-- Security Section -->
+<section class="security-section py-5">
+    <div class="container">
+        <div class="security-card animate__animated animate__fadeIn">
+            <div class="row align-items-center">
+                <div class="col-lg-2 text-center">
+                    <i class="fas fa-shield-alt security-icon"></i>
+                </div>
+                <div class="col-lg-10">
+                    <h2 class="security-title">Security & Compliance</h2>
+                    <p class="security-description">
+                        Your health data deserves the highest level of protection. 6th Sense is fully compliant with HIPAA and GDPR standards, ensuring your information is always secure and private.
+                    </p>
+                    <div class="security-features">
+                        <span class="security-feature"><i class="fas fa-lock me-2"></i> End-to-end encryption</span>
+                        <span class="security-feature"><i class="fas fa-user-shield me-2"></i> Consent-based access</span>
+                        <span class="security-feature"><i class="fas fa-key me-2"></i> Multi-factor authentication</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="cta-section py-5">
+    <div class="container">
+        <div class="cta-card animate__animated animate__pulse">
+            <h2 class="cta-title">Ready to Transform Your Health Management?</h2>
+            <p class="cta-description">Join thousands of patients and healthcare providers already benefiting from our AI-powered platform.</p>
+            {% if not current_user.is_authenticated %}
+            <div class="cta-buttons">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-health btn-health-primary btn-lg">
+                    <i class="fas fa-rocket me-2"></i> Get Started Now
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Add custom CSS for index page -->
+<style>
+/* Hero Section */
+.health-hero {
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    padding: 6rem 0 7rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.hero-highlight {
+    background: linear-gradient(to right, #fff, #e0e0e0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+.hero-cta {
+    margin-top: 2rem;
+}
+
+.hero-illustration {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.hero-image-container {
+    width: 300px;
+    height: 300px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-pulse-effect {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    z-index: 1;
+    animation: pulse-ring 3s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.hero-icon-container {
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+.hero-icon-pulse {
+    font-size: 4rem;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.7);
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 0.1;
+    }
+    100% {
+        transform: scale(1.3);
+        opacity: 0;
+    }
+}
+
+.wave-divider {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1;
+    line-height: 0;
+}
+
+/* Features Section */
+.features-section {
+    background-color: #0d1117;
+    position: relative;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.text-gradient {
+    background: linear-gradient(to right, var(--health-primary), var(--health-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.section-subtitle {
+    font-size: 1.1rem;
+    color: var(--health-secondary);
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 1rem;
+    padding: 2rem;
+    height: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+    text-align: center;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: var(--health-card-shadow);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.feature-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(44, 123, 229, 0.1), rgba(0, 119, 255, 0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.feature-icon {
+    font-size: 2rem;
+    color: var(--health-primary);
+}
+
+.feature-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.feature-description {
+    color: var(--health-secondary);
+    line-height: 1.6;
+}
+
+/* Audience Section */
+.audience-section {
+    background-color: #0d1117;
+    padding: 3rem 0;
+}
+
+.audience-card {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 1rem;
+    overflow: hidden;
+    height: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+}
+
+.audience-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--health-card-shadow);
+}
+
+.patient-card {
+    border-top: 4px solid var(--health-primary);
+}
+
+.provider-card {
+    border-top: 4px solid var(--health-success);
+}
+
+.audience-card-header {
+    padding: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+}
+
+.audience-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.patient-card .audience-icon-wrapper {
+    background-color: rgba(44, 123, 229, 0.1);
+}
+
+.provider-card .audience-icon-wrapper {
+    background-color: rgba(0, 204, 142, 0.1);
+}
+
+.audience-icon {
+    font-size: 1.5rem;
+}
+
+.patient-card .audience-icon {
+    color: var(--health-primary);
+}
+
+.provider-card .audience-icon {
+    color: var(--health-success);
+}
+
+.audience-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.audience-card-body {
+    padding: 1.5rem;
+}
+
+.audience-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+}
+
+.audience-feature-list li {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+    position: relative;
+    line-height: 1.5;
+}
+
+.list-icon {
+    position: absolute;
+    left: 0;
+    top: 3px;
+}
+
+.patient-card .list-icon {
+    color: var(--health-primary);
+}
+
+.provider-card .list-icon {
+    color: var(--health-success);
+}
+
+.audience-cta {
+    margin-top: 1.5rem;
+}
+
+/* Security Section */
+.security-section {
+    background-color: #0d1117;
+    padding: 3rem 0;
+}
+
+.security-card {
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 1rem;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s;
+}
+
+.security-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--health-card-shadow);
+}
+
+.security-icon {
+    font-size: 4rem;
+    color: var(--health-warning);
+    background: linear-gradient(135deg, var(--health-warning), #ff9d00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.security-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.security-description {
+    color: var(--health-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.security-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.security-feature {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+}
+
+/* CTA Section */
+.cta-section {
+    background-color: #0d1117;
+    padding: 4rem 0;
+}
+
+.cta-card {
+    background: linear-gradient(135deg, rgba(44, 123, 229, 0.1), rgba(0, 204, 142, 0.1));
+    border-radius: 1rem;
+    padding: 3rem 2rem;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cta-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, var(--health-primary), var(--health-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.cta-description {
+    font-size: 1.1rem;
+    color: var(--health-secondary);
+    max-width: 700px;
+    margin: 0 auto 2rem;
+}
+
+.cta-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-image-container {
+        width: 250px;
+        height: 250px;
+    }
+    
+    .hero-icon-container {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .hero-icon-pulse {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .health-hero {
+        padding: 4rem 0 6rem;
+    }
+    
+    .hero-content {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .security-card {
+        text-align: center;
+    }
+    
+    .security-icon {
+        margin-bottom: 1.5rem;
+    }
+    
+    .security-features {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+    
+    .feature-card, .audience-card, .security-card, .cta-card {
+        padding: 1.5rem;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+    }
+    
+    .cta-title {
+        font-size: 1.5rem;
+    }
+    
+    .cta-description {
+        font-size: 1rem;
+    }
+}
+</style>
 {% endblock %}
