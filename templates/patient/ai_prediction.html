@@ -20,18 +20,43 @@
     </div>
 
     {% if 'error' in prediction %}
-        <div class="alert alert-danger">
-            <h4 class="alert-heading">Error generating prediction</h4>
-            <p>{{ prediction.error }}</p>
-            {% if prediction.details %}
-                <hr>
-                <details>
-                    <summary>Technical Details</summary>
-                    <pre class="mt-2">{{ prediction.details }}</pre>
-                </details>
-            {% endif %}
-        </div>
-    {% else %}
+        {% if 'rule-based' in prediction.error or 'fallback' in prediction.error %}
+            <!-- Show warning but continue with prediction display -->
+            <div class="alert alert-warning mb-4">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Using Fallback Prediction System</h5>
+                <p>{{ prediction.error }}</p>
+                <p class="mb-0">The system is using a rule-based approach instead of AI. Results are still based on your health data but may be less personalized.</p>
+                {% if prediction.details %}
+                    <hr>
+                    <details>
+                        <summary>Technical Details (for administrators)</summary>
+                        <pre class="mt-2 small">{{ prediction.details }}</pre>
+                    </details>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Critical error that prevents predictions -->
+            <div class="alert alert-danger">
+                <h4 class="alert-heading">Error generating prediction</h4>
+                <p>{{ prediction.error }}</p>
+                {% if prediction.details %}
+                    <hr>
+                    <details>
+                        <summary>Technical Details</summary>
+                        <pre class="mt-2">{{ prediction.details }}</pre>
+                    </details>
+                {% endif %}
+            </div>
+            <div class="text-center my-5">
+                <a href="{{ url_for('patient.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>Return to Dashboard
+                </a>
+            </div>
+            {% set display_prediction = false %}
+        {% endif %}
+    {% endif %}
+    
+    {% if 'error' not in prediction or 'rule-based' in prediction.error or 'fallback' in prediction.error %}
 
     <div class="row mb-4">
         <!-- Risk Score -->
@@ -93,6 +118,13 @@
             {% if prediction.note %}
             <div class="alert alert-info mb-3">
                 <i class="fas fa-info-circle me-2"></i> {{ prediction.note }}
+                <div class="mt-2">
+                    <small>
+                        <strong>Note:</strong> A fallback prediction system is being used. While not as personalized as our AI model,
+                        it still provides useful insights based on your health data. For more accurate predictions,
+                        please check that the system has a valid Gemini API key.
+                    </small>
+                </div>
             </div>
             {% endif %}
             <div class="assessment-content">
@@ -143,7 +175,7 @@
 
 {% block scripts %}
 <script>
-{% if 'error' not in prediction and prediction.risk_score is not none %}
+{% if prediction.risk_score is defined and prediction.risk_score is not none %}
 document.addEventListener('DOMContentLoaded', function() {
     // Create risk gauge chart
     createRiskGaugeChart('aiRiskGaugeChart', {{ prediction.risk_score }});

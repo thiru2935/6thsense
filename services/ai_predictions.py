@@ -630,20 +630,43 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
                 # Generate prompt
                 prompt = generate_prediction_prompt(health_data, condition)
                 
-                # Try gemini-1.5-pro first
+                # Get list of available models
+                available_models = []
                 try:
-                    model = genai.GenerativeModel('gemini-1.5-pro')
-                    response = model.generate_content(prompt)
-                except Exception as model_error:
-                    current_app.logger.error(f"Error with gemini-1.5-pro model: {str(model_error)}")
-                    # Fall back to gemini-pro
+                    available_models = [model.name for model in genai.list_models()]
+                    current_app.logger.info(f"Available models: {available_models}")
+                except Exception as list_error:
+                    current_app.logger.error(f"Error listing Gemini models: {str(list_error)}")
+                
+                # Try different Gemini models in order of preference
+                response = None
+                model_error = None
+                
+                # Define model preference order
+                model_preferences = [
+                    'gemini-1.5-pro',
+                    'gemini-pro',
+                    'gemini-1.0-pro',
+                    'models/gemini-1.5-pro',
+                    'models/gemini-pro'
+                ]
+                
+                # Try each model in order until one works
+                for model_name in model_preferences:
                     try:
-                        model = genai.GenerativeModel('gemini-pro')
+                        current_app.logger.info(f"Trying model: {model_name}")
+                        model = genai.GenerativeModel(model_name)
                         response = model.generate_content(prompt)
-                    except Exception as fallback_error:
-                        current_app.logger.error(f"Error with fallback model: {str(fallback_error)}")
-                        # If both models fail, use rule-based approach
-                        raise Exception(f"Failed to generate content with any available Gemini model: {str(model_error)}")
+                        current_app.logger.info(f"Successfully used model: {model_name}")
+                        break  # Exit the loop if successful
+                    except Exception as err:
+                        model_error = err
+                        current_app.logger.error(f"Error with {model_name} model: {str(err)}")
+                        continue  # Try the next model
+                
+                # If all models failed, use rule-based approach
+                if response is None:
+                    raise Exception(f"Failed to generate content with any available Gemini model. Last error: {str(model_error)}")
                 
                 # Process AI response
                 response_text = response.text

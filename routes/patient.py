@@ -476,11 +476,18 @@ def ai_prediction(condition):
     # Check if there was an error with the prediction
     if 'error' in prediction_result:
         error_message = prediction_result['error']
-        if 'API_KEY' in error_message:
-            flash('Gemini API key is required for AI predictions. Please contact your administrator.', 'warning')
-        else:
+        error_details = prediction_result.get('details', '')
+        
+        # Instead of redirecting, we'll still render the template with the error
+        # This allows us to show technical details to admin users
+        if 'API_KEY' in error_message or 'Gemini API' in error_message:
+            prediction_result['error'] = 'Gemini API key is required or invalid. The system will use rule-based predictions instead.'
+            prediction_result['details'] = error_details
+        
+        # Only redirect for catastrophic errors that prevent any prediction
+        if 'rule-based' not in error_message and 'fallback' not in error_message:
             flash(f'Error generating prediction: {error_message}', 'danger')
-        return redirect(url_for('patient.dashboard'))
+            return redirect(url_for('patient.dashboard'))
     
     return render_template('patient/ai_prediction.html',
                           patient=patient,
