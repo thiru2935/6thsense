@@ -33,8 +33,20 @@ def configure_genai():
         logging.error("GEMINI_API_KEY not found in environment variables")
         return False
     
-    genai.configure(api_key=api_key)
-    return True
+    try:
+        # Log key length for debugging (don't log the actual key)
+        logging.info(f"Configuring Gemini API with key of length: {len(api_key)}")
+        
+        genai.configure(api_key=api_key)
+        
+        # Test API connectivity by listing available models
+        available_models = [model.name for model in genai.list_models()]
+        logging.info(f"Available Gemini models: {available_models}")
+        
+        return True
+    except Exception as e:
+        logging.error(f"Error configuring Gemini API: {str(e)}")
+        return False
 
 
 def get_patient_health_data(patient_id, days=90):
@@ -405,6 +417,179 @@ def extract_risk_score_from_response(response_text):
     return (risk_score, key_factors, assessment, recommendations)
 
 
+def generate_rule_based_prediction(health_data, condition):
+    """
+    Generate a fallback prediction using a rule-based approach when AI is unavailable.
+    This is a simple heuristic model based on health data readings.
+    
+    Args:
+        health_data: Dictionary containing patient health data
+        condition: Type of condition (diabetes, hypertension, cardiovascular)
+        
+    Returns:
+        Tuple of (risk_score, key_factors, assessment, recommendations)
+    """
+    if not health_data:
+        return (50, ["Insufficient data"], "Unable to provide detailed assessment due to limited data.", 
+                ["Consult with your healthcare provider for a professional evaluation."])
+    
+    # Default values
+    risk_score = 50
+    key_factors = []
+    assessment = "This is a basic assessment based on your health readings."
+    recommendations = [
+        "Maintain a balanced diet",
+        "Exercise regularly",
+        "Get regular check-ups with your healthcare provider"
+    ]
+    
+    # Basic risk calculation based on abnormal readings
+    abnormal_count = health_data.get('abnormal_readings_count', 0)
+    total_readings = health_data.get('metadata', {}).get('total_readings_count', 0)
+    
+    # Age risk factor
+    age = health_data.get('patient_info', {}).get('age')
+    if age:
+        if age > 65:
+            risk_score += 15
+            key_factors.append(f"Advanced age ({age} years)")
+        elif age > 50:
+            risk_score += 10
+            key_factors.append(f"Age over 50 ({age} years)")
+    
+    # Readings risk factors
+    if total_readings > 0:
+        abnormal_percent = (abnormal_count / total_readings) * 100
+        if abnormal_percent > 30:
+            risk_score += 20
+            key_factors.append(f"High percentage of abnormal readings ({abnormal_percent:.1f}%)")
+        elif abnormal_percent > 10:
+            risk_score += 10
+            key_factors.append(f"Moderate percentage of abnormal readings ({abnormal_percent:.1f}%)")
+    
+    # Condition-specific risk factors
+    if condition == 'diabetes':
+        # Check blood glucose readings
+        bg_readings = health_data.get('readings', {}).get('blood_glucose', [])
+        if bg_readings:
+            avg_bg = sum(r['value'] for r in bg_readings) / len(bg_readings)
+            if avg_bg > 180:
+                risk_score += 25
+                key_factors.append(f"Elevated average blood glucose ({avg_bg:.1f} mg/dL)")
+            elif avg_bg > 140:
+                risk_score += 15
+                key_factors.append(f"Moderately elevated blood glucose ({avg_bg:.1f} mg/dL)")
+                
+            assessment = f"Based on your average blood glucose level of {avg_bg:.1f} mg/dL and other factors, "
+            if avg_bg > 180:
+                assessment += "your diabetes risk appears to be elevated. Consistently high blood glucose readings may indicate poor glycemic control."
+            elif avg_bg > 140:
+                assessment += "your diabetes risk appears to be moderate. Your glucose readings show room for improvement."
+            else:
+                assessment += "your diabetes risk appears to be relatively controlled based on your readings."
+                
+            # Add diabetes-specific recommendations
+            recommendations = [
+                "Monitor your blood glucose regularly",
+                "Limit intake of refined carbohydrates and sugars",
+                "Stay physically active to help manage blood glucose levels",
+                "Consult with your healthcare provider about your diabetes management plan"
+            ]
+            
+    elif condition == 'hypertension':
+        # Check blood pressure readings
+        bp_readings = health_data.get('readings', {}).get('blood_pressure', [])
+        if bp_readings:
+            # Extract systolic and diastolic values
+            systolic_values = [r.get('systolic') for r in bp_readings if r.get('systolic') is not None]
+            diastolic_values = [r.get('diastolic') for r in bp_readings if r.get('diastolic') is not None]
+            
+            if systolic_values:
+                avg_systolic = sum(systolic_values) / len(systolic_values)
+                if avg_systolic > 140:
+                    risk_score += 25
+                    key_factors.append(f"Elevated average systolic BP ({avg_systolic:.1f} mmHg)")
+                elif avg_systolic > 130:
+                    risk_score += 15
+                    key_factors.append(f"Moderately elevated systolic BP ({avg_systolic:.1f} mmHg)")
+            
+            if diastolic_values:
+                avg_diastolic = sum(diastolic_values) / len(diastolic_values)
+                if avg_diastolic > 90:
+                    risk_score += 25
+                    key_factors.append(f"Elevated average diastolic BP ({avg_diastolic:.1f} mmHg)")
+                elif avg_diastolic > 80:
+                    risk_score += 15
+                    key_factors.append(f"Moderately elevated diastolic BP ({avg_diastolic:.1f} mmHg)")
+                    
+            if systolic_values and diastolic_values:
+                assessment = f"Based on your average blood pressure of {avg_systolic:.1f}/{avg_diastolic:.1f} mmHg, "
+                if avg_systolic > 140 or avg_diastolic > 90:
+                    assessment += "your hypertension risk appears to be elevated. Consistently high blood pressure readings may increase your risk of cardiovascular complications."
+                elif avg_systolic > 130 or avg_diastolic > 80:
+                    assessment += "your hypertension risk appears to be moderate. Your blood pressure readings show room for improvement."
+                else:
+                    assessment += "your blood pressure appears to be within a healthier range based on your readings."
+                
+            # Add hypertension-specific recommendations
+            recommendations = [
+                "Monitor your blood pressure regularly",
+                "Reduce sodium intake in your diet",
+                "Maintain a healthy weight through diet and exercise",
+                "Avoid excessive alcohol consumption",
+                "Practice stress-management techniques"
+            ]
+            
+    elif condition == 'cardiovascular':
+        # Combined BP and HR assessment
+        bp_readings = health_data.get('readings', {}).get('blood_pressure', [])
+        hr_readings = health_data.get('readings', {}).get('heart_rate', [])
+        
+        cv_factors = []
+        
+        if bp_readings:
+            systolic_values = [r.get('systolic') for r in bp_readings if r.get('systolic') is not None]
+            if systolic_values:
+                avg_systolic = sum(systolic_values) / len(systolic_values)
+                if avg_systolic > 140:
+                    risk_score += 20
+                    cv_factors.append(f"Elevated systolic BP ({avg_systolic:.1f} mmHg)")
+        
+        if hr_readings:
+            avg_hr = sum(r['value'] for r in hr_readings) / len(hr_readings)
+            if avg_hr > 100:
+                risk_score += 15
+                cv_factors.append(f"Elevated resting heart rate ({avg_hr:.1f} bpm)")
+        
+        if cv_factors:
+            key_factors.extend(cv_factors)
+            
+        assessment = "Based on your cardiovascular health indicators, "
+        if risk_score > 70:
+            assessment += "your cardiovascular risk appears to be elevated. Several risk factors have been identified that may increase your risk of heart disease."
+        elif risk_score > 50:
+            assessment += "your cardiovascular risk appears to be moderate. Some risk factors have been identified that could be addressed to improve your heart health."
+        else:
+            assessment += "your cardiovascular risk appears to be relatively lower based on available readings."
+            
+        # Add cardiovascular-specific recommendations
+        recommendations = [
+            "Maintain a heart-healthy diet rich in fruits, vegetables, and whole grains",
+            "Exercise regularly, aiming for at least 150 minutes of moderate activity per week",
+            "Monitor your blood pressure and cholesterol levels",
+            "Avoid smoking and limit alcohol consumption",
+            "Manage stress through relaxation techniques"
+        ]
+    
+    # Ensure risk score is within 0-100 range
+    risk_score = max(0, min(100, risk_score))
+    
+    # Limit to 5 key factors max
+    key_factors = key_factors[:5]
+    
+    return (risk_score, key_factors, assessment, recommendations)
+
+
 def predict_disease_risk(patient_id, condition, save_to_db=True):
     """
     Generate a prediction for a specific chronic disease condition using Gemini AI.
@@ -418,33 +603,63 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
         Dictionary with prediction results
     """
     try:
-        # Configure Gemini API
-        if not configure_genai():
-            return {
-                "error": "Gemini API configuration failed. Please check your API key."
-            }
-        
-        # Get patient health data
+        # Get patient health data first (needed for either approach)
         health_data = get_patient_health_data(patient_id)
         if not health_data:
             return {
                 "error": "Could not retrieve patient health data."
             }
         
-        # Generate prompt
-        prompt = generate_prediction_prompt(health_data, condition)
+        use_ai_model = True
+        ai_error = None
         
-        # Get Gemini model - using gemini-1.0-pro (updated model name)
-        model = genai.GenerativeModel('gemini-1.0-pro')
+        # Try to configure Gemini API
+        if not configure_genai():
+            current_app.logger.warning("Gemini API configuration failed. Falling back to rule-based prediction.")
+            use_ai_model = False
+            ai_error = "Gemini API configuration failed. Using rule-based prediction instead."
         
-        # Generate response
-        response = model.generate_content(prompt)
-        response_text = response.text
+        # Variables to store prediction results
+        risk_score = 0
+        key_factors = []
+        assessment = ""
+        recommendations = []
         
-        # Extract prediction components
-        risk_score, key_factors, assessment, recommendations = extract_risk_score_from_response(response_text)
+        if use_ai_model:
+            try:
+                # Generate prompt
+                prompt = generate_prediction_prompt(health_data, condition)
+                
+                # Try gemini-1.5-pro first
+                try:
+                    model = genai.GenerativeModel('gemini-1.5-pro')
+                    response = model.generate_content(prompt)
+                except Exception as model_error:
+                    current_app.logger.error(f"Error with gemini-1.5-pro model: {str(model_error)}")
+                    # Fall back to gemini-pro
+                    try:
+                        model = genai.GenerativeModel('gemini-pro')
+                        response = model.generate_content(prompt)
+                    except Exception as fallback_error:
+                        current_app.logger.error(f"Error with fallback model: {str(fallback_error)}")
+                        # If both models fail, use rule-based approach
+                        raise Exception(f"Failed to generate content with any available Gemini model: {str(model_error)}")
+                
+                # Process AI response
+                response_text = response.text
+                risk_score, key_factors, assessment, recommendations = extract_risk_score_from_response(response_text)
+                
+            except Exception as e:
+                current_app.logger.error(f"Error using Gemini AI model: {str(e)}")
+                use_ai_model = False
+                ai_error = f"AI prediction failed: {str(e)}. Using rule-based prediction instead."
         
-        # Convert key factors and recommendations to JSON strings
+        # If AI approach failed, use rule-based approach
+        if not use_ai_model:
+            current_app.logger.info(f"Using rule-based prediction for {condition}")
+            risk_score, key_factors, assessment, recommendations = generate_rule_based_prediction(health_data, condition)
+        
+        # Convert key factors and recommendations to JSON strings for database storage
         key_factors_json = json.dumps(key_factors)
         recommendations_json = json.dumps(recommendations)
         
@@ -460,7 +675,7 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
             if not pred_model:
                 pred_model = PredictionModel(
                     name=model_name,
-                    description=f"AI-powered {condition} risk assessment model",
+                    description=f"Risk assessment model for {condition}",
                     model_type="classification",
                     target_condition=condition,
                     is_active=True
@@ -473,9 +688,9 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
                 model_id=pred_model.id,
                 patient_id=patient_id,
                 prediction_value=risk_score,
-                confidence=0.85,  # Default confidence value
+                confidence=0.85 if use_ai_model else 0.70,  # Lower confidence for rule-based
                 timestamp=datetime.utcnow(),
-                notes=f"Generated using Gemini AI model",
+                notes=f"Generated using {'Gemini AI' if use_ai_model else 'rule-based'} model",
                 key_factors=key_factors_json,
                 recommendations=recommendations_json,
                 assessment=assessment,
@@ -486,7 +701,7 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
             db.session.commit()
         
         # Return prediction results
-        return {
+        result = {
             "risk_score": risk_score,
             "key_factors": key_factors,
             "assessment": assessment,
@@ -494,6 +709,12 @@ def predict_disease_risk(patient_id, condition, save_to_db=True):
             "condition": condition,
             "timestamp": datetime.utcnow().isoformat()
         }
+        
+        # Add a note if we used the fallback approach
+        if not use_ai_model:
+            result["note"] = ai_error
+            
+        return result
         
     except Exception as e:
         current_app.logger.error(f"Error in predict_disease_risk: {str(e)}")

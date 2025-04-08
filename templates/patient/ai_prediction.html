@@ -87,9 +87,14 @@
     <!-- Assessment -->
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-stethoscope me-2"></i>AI Assessment</h5>
+            <h5 class="mb-0"><i class="fas fa-stethoscope me-2"></i>Health Assessment</h5>
         </div>
         <div class="card-body">
+            {% if prediction.note %}
+            <div class="alert alert-info mb-3">
+                <i class="fas fa-info-circle me-2"></i> {{ prediction.note }}
+            </div>
+            {% endif %}
             <div class="assessment-content">
                 {{ prediction.assessment|safe }}
             </div>
