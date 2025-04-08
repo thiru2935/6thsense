@@ -121,7 +121,7 @@ def devices():
     devices = Device.query.filter_by(patient_id=patient.id).all()
     return render_template('patient/devices.html', patient=patient, devices=devices)
 
-@patient_bp.route('/sync_devices', methods=['POST'])
+@patient_bp.route('/sync_patient_devices', methods=['POST'])
 @login_required
 def sync_patient_devices():
     patient = PatientProfile.query.filter_by(user_id=current_user.id).first()

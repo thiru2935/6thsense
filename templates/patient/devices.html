@@ -7,9 +7,11 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1><i class="fas fa-mobile-alt me-2"></i>My Devices</h1>
         <div>
-            <a href="{{ url_for('patient.sync_devices') }}" method="post" class="btn btn-primary">
-                <i class="fas fa-sync me-2"></i>Sync All Devices
-            </a>
+            <form action="{{ url_for('patient.sync_patient_devices') }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sync me-2"></i>Sync All Devices
+                </button>
+            </form>
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
                 <i class="fas fa-plus me-2"></i>Add Device
             </button>

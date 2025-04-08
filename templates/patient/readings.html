@@ -10,9 +10,11 @@
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReadingModal">
                 <i class="fas fa-plus me-2"></i>Add Manual Reading
             </button>
-            <a href="{{ url_for('patient.sync_devices') }}" method="post" class="btn btn-outline-primary">
+            <form action="{{ url_for('patient.sync_patient_devices') }}" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-outline-primary">
                 <i class="fas fa-sync me-2"></i>Sync Devices
-            </a>
+            </button>
+            </form>
         </div>
     </div>
 
@@ -156,13 +158,18 @@
                     <nav aria-label="Reading history pagination" class="mt-4">
                         <ul class="pagination justify-content-center">
                             <li class="page-item disabled">
-                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</button>
+            </form>
                             </li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</button>
+            </form></li>
+                            <li class="page-item"><a class="page-link" href="#">2</button>
+            </form></li>
+                            <li class="page-item"><a class="page-link" href="#">3</button>
+            </form></li>
                             <li class="page-item">
-                                <a class="page-link" href="#">Next</a>
+                                <a class="page-link" href="#">Next</button>
+            </form>
                             </li>
                         </ul>
                     </nav>
@@ -178,9 +185,12 @@
                             <span class="visually-hidden">Toggle Dropdown</span>
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i>CSV</button>
+            </form></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</button>
+            </form></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print</button>
+            </form></li>
                         </ul>
                     </div>
                 </div>
