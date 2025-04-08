@@ -1,0 +1,249 @@
+{% extends "layout.html" %}
+
+{% block title %}Add Data Mapping - {{ system.system_name }} - 6th Sense{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('emr.systems_list') }}">External Systems</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('emr.system_detail', system_id=system.id) }}">{{ system.system_name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Data Mapping</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-exchange-alt me-2"></i>Add Data Mapping</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Field Mapping Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('emr.add_mapping', system_id=system.id) }}">
+                        <div class="mb-3">
+                            <label for="entity_type" class="form-label">Entity Type</label>
+                            <select class="form-select" id="entity_type" name="entity_type" required>
+                                <option value="" selected disabled>Select the entity type</option>
+                                {% for entity_type in entity_types %}
+                                    <option value="{{ entity_type }}">{{ entity_type|replace('_', ' ')|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">The type of data entity this mapping applies to.</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="our_field" class="form-label">Our Field</label>
+                                <input type="text" class="form-control" id="our_field" name="our_field" required>
+                                <div class="form-text">The field name in our system.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="external_field" class="form-label">External Field</label>
+                                <input type="text" class="form-control" id="external_field" name="external_field" required>
+                                <div class="form-text">The corresponding field name in the external system.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="data_type" class="form-label">Data Type</label>
+                            <select class="form-select" id="data_type" name="data_type" required>
+                                <option value="" selected disabled>Select data type</option>
+                                {% for data_type in data_types %}
+                                    <option value="{{ data_type }}">{{ data_type|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">The data type of this field.</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_required" name="is_required">
+                            <label class="form-check-label" for="is_required">Required Field</label>
+                            <div class="form-text">If checked, this field is required for successful data exchange.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="transformation_rule" class="form-label">Transformation Rule (Optional)</label>
+                            <textarea class="form-control" id="transformation_rule" name="transformation_rule" rows="4" placeholder='{
+  "type": "date_format",
+  "format": "%Y-%m-%d"
+}'></textarea>
+                            <div class="form-text">JSON-formatted transformation rule to convert data between systems. Leave blank if no transformation is needed.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('emr.system_detail', system_id=system.id) }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Save Mapping
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">About Data Mappings</h6>
+                    <p>
+                        Data mappings define how fields in our system correspond to fields in the external system.
+                        They enable accurate data translation during synchronization.
+                    </p>
+                    
+                    <h6 class="mt-3">Transformation Rules</h6>
+                    <p>
+                        Transformation rules are JSON objects that specify how to convert data between systems.
+                        Here are some examples:
+                    </p>
+                    
+                    <div class="accordion" id="accordionTransformationExamples">
+                        <!-- Date Format Example -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                    Date Format Conversion
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionTransformationExamples">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-2">
+{
+  "type": "date_format",
+  "format": "%Y-%m-%d"
+}</pre>
+                                    <p class="mt-2 small">Converts a date to the specified format</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Value Mapping Example -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    Value Mapping
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionTransformationExamples">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-2">
+{
+  "type": "mapping",
+  "map": {
+    "male": "M",
+    "female": "F"
+  },
+  "default": "U"
+}</pre>
+                                    <p class="mt-2 small">Maps values from one set to another</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Unit Conversion Example -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    Unit Conversion
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionTransformationExamples">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-2">
+{
+  "type": "unit_conversion",
+  "from": "mmol/L",
+  "to": "mg/dL"
+}</pre>
+                                    <p class="mt-2 small">Converts between different units of measurement</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const entityTypeSelect = document.getElementById('entity_type');
+        const ourFieldInput = document.getElementById('our_field');
+        
+        // Common field suggestions by entity type
+        const fieldSuggestions = {
+            patient: ['first_name', 'last_name', 'date_of_birth', 'gender', 'contact_number', 'address', 'diagnosis'],
+            health_reading: ['reading_type', 'value', 'unit', 'timestamp', 'value_systolic', 'value_diastolic', 'value_pulse'],
+            medication: ['name', 'dosage', 'frequency', 'start_date', 'end_date', 'instructions', 'is_active'],
+            health_record: ['record_type', 'title', 'content', 'recorded_at'],
+            device: ['device_type', 'device_id', 'manufacturer', 'model', 'last_synced']
+        };
+        
+        // Add datalist for field suggestions
+        const createDatalist = () => {
+            // Remove existing datalist if any
+            const existingDatalist = document.getElementById('fieldSuggestions');
+            if (existingDatalist) {
+                existingDatalist.remove();
+            }
+            
+            const entityType = entityTypeSelect.value;
+            
+            if (entityType && fieldSuggestions[entityType]) {
+                // Create new datalist
+                const datalist = document.createElement('datalist');
+                datalist.id = 'fieldSuggestions';
+                
+                // Add options
+                fieldSuggestions[entityType].forEach(field => {
+                    const option = document.createElement('option');
+                    option.value = field;
+                    datalist.appendChild(option);
+                });
+                
+                // Add datalist to document
+                document.body.appendChild(datalist);
+                
+                // Connect input to datalist
+                ourFieldInput.setAttribute('list', 'fieldSuggestions');
+            } else {
+                ourFieldInput.removeAttribute('list');
+            }
+        };
+        
+        // Update suggestions when entity type changes
+        entityTypeSelect.addEventListener('change', createDatalist);
+        
+        // Validate the transformation rule JSON
+        const transformationRuleTextarea = document.getElementById('transformation_rule');
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(event) {
+            const rule = transformationRuleTextarea.value.trim();
+            
+            if (rule) {
+                try {
+                    JSON.parse(rule);
+                } catch (e) {
+                    alert('Transformation rule contains invalid JSON. Please correct it before submitting.');
+                    event.preventDefault();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

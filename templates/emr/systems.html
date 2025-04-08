@@ -1,0 +1,166 @@
+{% extends "layout.html" %}
+
+{% block title %}External Systems - 6th Sense{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-hospital me-2"></i>External Systems Integration</h1>
+        <a href="{{ url_for('emr.add_system') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add New System
+        </a>
+    </div>
+
+    <div class="card dashboard-card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Integrated Systems</h5>
+        </div>
+        <div class="card-body">
+            {% if systems %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>System Name</th>
+                                <th>Type</th>
+                                <th>Auth Type</th>
+                                <th>Status</th>
+                                <th>Bidirectional</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for system in systems %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ system.system_name }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ system.system_type|upper }}</span>
+                                    </td>
+                                    <td>{{ system.api_auth_type }}</td>
+                                    <td>
+                                        {% if system.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Disabled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if system.is_bidirectional %}
+                                            <span class="badge bg-info">Bidirectional</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Read Only</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('emr.system_detail', system_id=system.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>Details
+                                            </a>
+                                            <a href="{{ url_for('emr.edit_system', system_id=system.id) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit me-1"></i>Edit
+                                            </a>
+                                            <a href="{{ url_for('emr.test_connection', system_id=system.id) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-plug me-1"></i>Test
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-database fa-3x mb-3 text-muted"></i>
+                    <h4>No external systems configured</h4>
+                    <p class="text-muted">Configure your first external system to begin integrating with EMR and hospital systems.</p>
+                    <a href="{{ url_for('emr.add_system') }}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-2"></i>Add New System
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card dashboard-card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Integration Overview</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">What is EMR Integration?</h5>
+                            <p class="card-text">
+                                Electronic Medical Record (EMR) integration allows 6th Sense to securely connect with
+                                external healthcare systems to share patient data in a bidirectional manner.
+                            </p>
+                            <p class="card-text">
+                                This enables seamless data exchange between our platform and hospital systems, labs, 
+                                and other healthcare providers, ensuring that patient data is always up-to-date.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Supported Integration Types</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex align-items-center">
+                                    <span class="badge bg-primary me-2">FHIR</span>
+                                    Fast Healthcare Interoperability Resources standard
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <span class="badge bg-primary me-2">Epic</span>
+                                    Epic EHR Systems
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <span class="badge bg-primary me-2">Cerner</span>
+                                    Cerner Millennium EHR Platform
+                                </li>
+                                <li class="list-group-item d-flex align-items-center">
+                                    <span class="badge bg-primary me-2">Custom</span>
+                                    Custom API Integrations
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-shield-alt me-2"></i>Security & Compliance</h5>
+                        <p>
+                            All integrations follow strict security protocols and comply with healthcare data
+                            regulations including HIPAA and GDPR. Data is encrypted in transit and at rest,
+                            and all access is logged for auditing purposes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Integration statistics (would be populated via API in production)
+        fetch('{{ url_for("emr.api_integration_stats") }}')
+            .then(response => response.json())
+            .then(stats => {
+                console.log('Integration stats loaded');
+            })
+            .catch(error => {
+                console.error('Error loading integration stats:', error);
+            });
+    });
+</script>
+{% endblock %}

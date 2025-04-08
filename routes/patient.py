@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 from app import db
-from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile, Prediction, PredictionModel
+from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile, Prediction, PredictionModel, PatientExternalMapping
 from services.prediction import predict_risk_score
 from services.device_integration import sync_devices
 from services.alerts import check_readings_for_alerts
@@ -42,6 +42,9 @@ def dashboard():
     
     # Get recent alerts
     alerts = Alert.query.filter_by(patient_id=patient.id, is_resolved=False).order_by(Alert.timestamp.desc()).limit(5).all()
+    
+    # Get external system mappings
+    external_mappings = PatientExternalMapping.query.filter_by(patient_id=patient.id).all()
     
     # Calculate risk score
     risk_score = predict_risk_score(patient.id)
@@ -124,7 +127,8 @@ def dashboard():
                            medication_logs=medication_logs,
                            reading_types_dict=reading_types_dict,
                            record_types_dict=record_types_dict,
-                           alert_statuses_dict=alert_statuses_dict)
+                           alert_statuses_dict=alert_statuses_dict,
+                           external_mappings=external_mappings)
 
 @patient_bp.route('/devices')
 @login_required

@@ -1,0 +1,153 @@
+{% extends "layout.html" %}
+
+{% block title %}Add External System - 6th Sense{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('emr.systems_list') }}">External Systems</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add New System</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-plus-circle me-2"></i>Add External System</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-hospital me-2"></i>System Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('emr.add_system') }}">
+                        <div class="mb-3">
+                            <label for="system_name" class="form-label">System Name</label>
+                            <input type="text" class="form-control" id="system_name" name="system_name" required>
+                            <div class="form-text">Provide a descriptive name for this external system.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="system_type" class="form-label">System Type</label>
+                            <select class="form-select" id="system_type" name="system_type" required>
+                                <option value="" selected disabled>Select a system type</option>
+                                {% for type in system_types %}
+                                    <option value="{{ type }}">{{ type|upper }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the type of external system.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="api_endpoint" class="form-label">API Endpoint</label>
+                            <input type="url" class="form-control" id="api_endpoint" name="api_endpoint" placeholder="https://api.example.com/v1" required>
+                            <div class="form-text">The base URL for the API endpoints.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="api_auth_type" class="form-label">Authentication Type</label>
+                            <select class="form-select" id="api_auth_type" name="api_auth_type" required>
+                                <option value="" selected disabled>Select authentication type</option>
+                                {% for auth_type in auth_types %}
+                                    <option value="{{ auth_type }}">{{ auth_type|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the authentication method required by the API.</div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_bidirectional" name="is_bidirectional">
+                            <label class="form-check-label" for="is_bidirectional">Enable Bidirectional Data Flow</label>
+                            <div class="form-text">If enabled, data can be both sent to and received from this system.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('emr.systems_list') }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Save System
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">About External Systems</h6>
+                    <p>
+                        External systems represent EMR, hospital systems, labs, or other healthcare platforms
+                        that can be integrated with 6th Sense for data exchange.
+                    </p>
+                    
+                    <h6 class="mt-3">Authentication Types</h6>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item">
+                            <strong>OAuth2</strong>: Uses tokens with automatic refresh capabilities
+                        </li>
+                        <li class="list-group-item">
+                            <strong>API Key</strong>: Uses a single API key for authentication
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Basic</strong>: Uses username/password authentication
+                        </li>
+                        <li class="list-group-item">
+                            <strong>JWT</strong>: Uses JSON Web Tokens for authentication
+                        </li>
+                    </ul>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Tip:</strong> After creating a system, you'll need to add connection details
+                        and data mappings before you can start synchronizing data.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add form validation
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(event) {
+            let valid = true;
+            
+            // Basic validation
+            const systemName = document.getElementById('system_name').value.trim();
+            const systemType = document.getElementById('system_type').value;
+            const apiEndpoint = document.getElementById('api_endpoint').value.trim();
+            const authType = document.getElementById('api_auth_type').value;
+            
+            if (!systemName || !systemType || !apiEndpoint || !authType) {
+                valid = false;
+                alert('Please fill out all required fields');
+            }
+            
+            // URL validation
+            if (apiEndpoint && !apiEndpoint.match(/^https?:\/\/.+/)) {
+                valid = false;
+                alert('API Endpoint must be a valid URL starting with http:// or https://');
+            }
+            
+            if (!valid) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

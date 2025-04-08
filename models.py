@@ -249,6 +249,95 @@ class TestAppointment(db.Model):
     patient = db.relationship('PatientProfile', backref=db.backref('test_appointments', cascade='all, delete-orphan'))
 
 
+# Models for EMR/Hospital systems integration
+class ExternalSystem(db.Model):
+    """External EMR/Hospital system that can be integrated with the platform"""
+    id = db.Column(db.Integer, primary_key=True)
+    system_name = db.Column(db.String(100), nullable=False)
+    system_type = db.Column(db.String(50), nullable=False)  # EMR, Hospital, Lab, etc.
+    api_endpoint = db.Column(db.String(255), nullable=False)
+    api_auth_type = db.Column(db.String(50), nullable=False)  # oauth2, apikey, jwt, etc.
+    is_active = db.Column(db.Boolean, default=True)
+    is_bidirectional = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    connections = db.relationship('SystemConnection', backref='system', cascade='all, delete-orphan')
+    data_mappings = db.relationship('DataMapping', backref='system', cascade='all, delete-orphan')
+    integration_logs = db.relationship('IntegrationLog', backref='system', cascade='all, delete-orphan')
+
+
+class SystemConnection(db.Model):
+    """Connection details for external systems"""
+    id = db.Column(db.Integer, primary_key=True)
+    system_id = db.Column(db.Integer, db.ForeignKey('external_system.id'), nullable=False)
+    connection_name = db.Column(db.String(100), nullable=False)
+    auth_token = db.Column(db.String(255))
+    refresh_token = db.Column(db.String(255))
+    token_expires_at = db.Column(db.DateTime)
+    connection_status = db.Column(db.String(50), default='pending')  # pending, active, error
+    last_sync = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Secure credentials are stored encrypted
+    # These fields should be encrypted in a production environment
+    api_key = db.Column(db.String(255))
+    client_id = db.Column(db.String(255))
+    client_secret = db.Column(db.String(255))
+
+
+class DataMapping(db.Model):
+    """Maps data fields between our system and external systems"""
+    id = db.Column(db.Integer, primary_key=True)
+    system_id = db.Column(db.Integer, db.ForeignKey('external_system.id'), nullable=False)
+    our_field = db.Column(db.String(100), nullable=False)  # Field name in our system
+    external_field = db.Column(db.String(100), nullable=False)  # Field name in external system
+    data_type = db.Column(db.String(50), nullable=False)  # string, integer, date, etc.
+    entity_type = db.Column(db.String(50), nullable=False)  # patient, reading, medication, etc.
+    is_required = db.Column(db.Boolean, default=False)
+    transformation_rule = db.Column(db.Text)  # JSON string with transformation rules if needed
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class IntegrationLog(db.Model):
+    """Logs all data exchange with external systems"""
+    id = db.Column(db.Integer, primary_key=True)
+    system_id = db.Column(db.Integer, db.ForeignKey('external_system.id'), nullable=False)
+    direction = db.Column(db.String(10), nullable=False)  # inbound, outbound
+    status = db.Column(db.String(20), nullable=False)  # success, error, pending
+    entity_type = db.Column(db.String(50), nullable=False)  # patient, reading, medication, etc.
+    entity_id = db.Column(db.Integer)  # ID of the affected entity
+    message = db.Column(db.Text)
+    details = db.Column(db.Text)  # JSON string with detailed information
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # If the integration involved a patient, link it
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'))
+    patient = db.relationship('PatientProfile', backref=db.backref('integration_logs', lazy='dynamic'))
+
+
+class PatientExternalMapping(db.Model):
+    """Maps patients in our system to their records in external systems"""
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient_profile.id'), nullable=False)
+    system_id = db.Column(db.Integer, db.ForeignKey('external_system.id'), nullable=False)
+    external_patient_id = db.Column(db.String(100), nullable=False)  # ID in the external system
+    last_sync = db.Column(db.DateTime)
+    sync_status = db.Column(db.String(20), default='pending')  # pending, synced, error
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    patient = db.relationship('PatientProfile')
+    system = db.relationship('ExternalSystem')
+    
+    # Unique constraint to ensure a patient can only be mapped once to a specific external system
+    __table_args__ = (db.UniqueConstraint('patient_id', 'system_id', name='uix_patient_system'),)
+
+
 # New models for health questionnaires
 class HealthQuestionnaire(db.Model):
     id = db.Column(db.Integer, primary_key=True)

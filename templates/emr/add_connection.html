@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+
+{% block title %}Add Connection - {{ system.system_name }} - 6th Sense{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('emr.systems_list') }}">External Systems</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('emr.system_detail', system_id=system.id) }}">{{ system.system_name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Connection</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-plug me-2"></i>Add Connection</h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-plug me-2"></i>Connection Details for {{ system.system_name }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('emr.add_connection', system_id=system.id) }}">
+                        <div class="mb-3">
+                            <label for="connection_name" class="form-label">Connection Name</label>
+                            <input type="text" class="form-control" id="connection_name" name="connection_name" required>
+                            <div class="form-text">A descriptive name for this connection (e.g., "Production API", "Test Environment")</div>
+                        </div>
+                        
+                        <!-- OAuth2 specific fields -->
+                        {% if system.api_auth_type == 'oauth2' %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This system uses OAuth2 authentication. Please provide the client credentials and tokens.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="client_id" class="form-label">Client ID</label>
+                                <input type="text" class="form-control" id="client_id" name="client_id" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="client_secret" class="form-label">Client Secret</label>
+                                <input type="password" class="form-control" id="client_secret" name="client_secret" required>
+                                <div class="form-text text-warning">Ensure this is kept secure. It will be stored encrypted.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="auth_token" class="form-label">Access Token</label>
+                                <input type="text" class="form-control" id="auth_token" name="auth_token" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="refresh_token" class="form-label">Refresh Token</label>
+                                <input type="text" class="form-control" id="refresh_token" name="refresh_token" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="token_expires_at" class="form-label">Token Expiration</label>
+                                <input type="datetime-local" class="form-control" id="token_expires_at" name="token_expires_at">
+                                <div class="form-text">When the access token expires. Leave blank if unknown.</div>
+                            </div>
+                            
+                        <!-- API Key specific fields -->
+                        {% elif system.api_auth_type == 'apikey' %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This system uses API Key authentication. Please provide the API key.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="api_key" class="form-label">API Key</label>
+                                <input type="password" class="form-control" id="api_key" name="api_key" required>
+                                <div class="form-text text-warning">Ensure this is kept secure. It will be stored encrypted.</div>
+                            </div>
+                            
+                        <!-- Basic Auth specific fields -->
+                        {% elif system.api_auth_type == 'basic' %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This system uses Basic authentication. Please provide the username and password.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <div class="form-text text-warning">Ensure this is kept secure. It will be stored encrypted.</div>
+                            </div>
+                            
+                        <!-- JWT specific fields -->
+                        {% elif system.api_auth_type == 'jwt' %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This system uses JWT authentication. Please provide the JWT token.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="auth_token" class="form-label">JWT Token</label>
+                                <input type="text" class="form-control" id="auth_token" name="auth_token" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="token_expires_at" class="form-label">Token Expiration</label>
+                                <input type="datetime-local" class="form-control" id="token_expires_at" name="token_expires_at">
+                                <div class="form-text">When the JWT token expires. Leave blank if unknown.</div>
+                            </div>
+                            
+                        <!-- No Auth -->
+                        {% elif system.api_auth_type == 'none' %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This system doesn't require authentication. No additional credentials needed.
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('emr.system_detail', system_id=system.id) }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Save Connection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card dashboard-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">About Connections</h6>
+                    <p>
+                        Connections store the authentication credentials needed to communicate with the external system.
+                        These credentials are used to securely retrieve and send data.
+                    </p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Security Note:</strong> All sensitive credentials are stored securely and encrypted 
+                        in the database. Never share these credentials or expose them in client-side code.
+                    </div>
+                    
+                    <h6 class="mt-3">After Adding a Connection</h6>
+                    <p>
+                        Once you've added a connection, you can test it to ensure it can properly communicate 
+                        with the external system. If successful, you can then begin setting up data mappings 
+                        and linking patients.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

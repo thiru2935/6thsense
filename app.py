@@ -49,6 +49,7 @@ with app.app_context():
     from routes.provider import provider_bp
     from routes.api import api_bp
     from routes.chatbot import chatbot_bp
+    from routes.emr_integration import emr_bp
     
     # Initialize default data
     from services.questionnaire import create_default_questions
@@ -63,6 +64,7 @@ with app.app_context():
     app.register_blueprint(provider_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(chatbot_bp)
+    app.register_blueprint(emr_bp)
     
     # Load user for Flask-Login
     @login_manager.user_loader

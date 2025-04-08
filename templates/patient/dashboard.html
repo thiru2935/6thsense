@@ -409,6 +409,62 @@
             </div>
         </div>
     </div>
+    
+    <!-- Fourth Row: External Systems -->
+    <div class="row mb-4">
+        <!-- External Systems -->
+        <div class="col-md-12 mb-4">
+            <div class="dashboard-card card-accent-teal animate__animated animate__fadeInUp" data-delay="600">
+                <div class="card-header">
+                    <i class="fas fa-exchange-alt"></i> External Health Systems
+                    <a href="{{ url_for('emr.patient_external_systems', patient_id=current_user.patient_profile.id) }}" class="float-end btn btn-sm btn-outline-info">Manage</a>
+                </div>
+                <div class="card-body">
+                    {% if external_mappings and external_mappings|length > 0 %}
+                        <div class="external-systems-list">
+                            {% for mapping in external_mappings %}
+                                <div class="external-system-item">
+                                    <div class="system-icon">
+                                        <i class="fas fa-hospital"></i>
+                                    </div>
+                                    <div class="system-info">
+                                        <div class="system-name">{{ mapping.system.system_name }}</div>
+                                        <div class="system-type">{{ mapping.system.system_type|upper }}</div>
+                                        <div class="system-status">
+                                            <span class="badge {% if mapping.sync_status == 'synced' %}bg-success{% elif mapping.sync_status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ mapping.sync_status|title }}
+                                            </span>
+                                        </div>
+                                        <div class="system-last-synced">
+                                            {% if mapping.last_sync %}
+                                                Last synced: {{ mapping.last_sync.strftime('%b %d, %I:%M %p') }}
+                                            {% else %}
+                                                Never synced
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="system-actions">
+                                        <a href="{{ url_for('emr.sync_patient_data', patient_id=current_user.patient_profile.id, system_id=mapping.system.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-sync-alt me-1"></i> Sync Now
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-link-slash fa-3x mb-3 text-muted"></i>
+                            <h4>No External Systems Linked</h4>
+                            <p class="text-muted">Connect your health records from other healthcare providers to maintain a complete health history.</p>
+                            <a href="{{ url_for('emr.patient_external_systems', patient_id=current_user.patient_profile.id) }}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus-circle me-1"></i> Connect Health Systems
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Dashboard specific styling -->

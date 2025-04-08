@@ -1,0 +1,376 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ system.system_name }} Details - 6th Sense{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('emr.systems_list') }}">External Systems</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ system.system_name }}</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="fas fa-hospital me-2"></i>{{ system.system_name }}
+            {% if system.is_active %}
+                <span class="badge bg-success">Active</span>
+            {% else %}
+                <span class="badge bg-danger">Disabled</span>
+            {% endif %}
+        </h1>
+        <div>
+            <a href="{{ url_for('emr.edit_system', system_id=system.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Edit System
+            </a>
+            <a href="{{ url_for('emr.test_connection', system_id=system.id) }}" class="btn btn-info">
+                <i class="fas fa-plug me-2"></i>Test Connection
+            </a>
+        </div>
+    </div>
+    
+    <!-- System Information -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>System Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>System ID</th>
+                                    <td>{{ system.id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>System Type</th>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ system.system_type|upper }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>API Endpoint</th>
+                                    <td><code>{{ system.api_endpoint }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Auth Type</th>
+                                    <td>{{ system.api_auth_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Bidirectional</th>
+                                    <td>
+                                        {% if system.is_bidirectional %}
+                                            <span class="text-success"><i class="fas fa-check-circle me-1"></i>Yes</span>
+                                        {% else %}
+                                            <span class="text-muted"><i class="fas fa-times-circle me-1"></i>No (Read Only)</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Created</th>
+                                    <td>{{ system.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Updated</th>
+                                    <td>{{ system.updated_at.strftime('%b %d, %Y %H:%M') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-plug me-2"></i>Connections</h5>
+                    <a href="{{ url_for('emr.add_connection', system_id=system.id) }}" class="btn btn-sm btn-light">
+                        <i class="fas fa-plus me-1"></i>Add Connection
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if connections %}
+                        <div class="list-group">
+                            {% for connection in connections %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ connection.connection_name }}</h6>
+                                        <small class="text-{% if connection.connection_status == 'active' %}success{% elif connection.connection_status == 'pending' %}warning{% else %}danger{% endif %}">
+                                            {{ connection.connection_status|title }}
+                                        </small>
+                                    </div>
+                                    <small class="d-block mb-1">
+                                        {% if connection.last_sync %}
+                                            Last synced: {{ connection.last_sync.strftime('%b %d, %Y %H:%M') }}
+                                        {% else %}
+                                            Never synced
+                                        {% endif %}
+                                    </small>
+                                    {% if system.api_auth_type == 'oauth2' and connection.token_expires_at %}
+                                        <small class="d-block mb-1">
+                                            Token expires: 
+                                            {% if connection.token_expires_at > now %}
+                                                <span class="text-success">{{ connection.token_expires_at.strftime('%b %d, %Y %H:%M') }}</span>
+                                            {% else %}
+                                                <span class="text-danger">Expired on {{ connection.token_expires_at.strftime('%b %d, %Y %H:%M') }}</span>
+                                            {% endif %}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-plug fa-3x mb-3 text-muted"></i>
+                            <p>No connections configured for this system.</p>
+                            <a href="{{ url_for('emr.add_connection', system_id=system.id) }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Connection
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabs for additional details -->
+    <div class="card dashboard-card mb-4">
+        <div class="card-header bg-primary p-0">
+            <ul class="nav nav-tabs card-header-tabs" id="systemDetailsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="mappings-tab" data-bs-toggle="tab" data-bs-target="#mappings" type="button" role="tab" aria-controls="mappings" aria-selected="true">
+                        <i class="fas fa-exchange-alt me-1"></i>Data Mappings
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" type="button" role="tab" aria-controls="logs" aria-selected="false">
+                        <i class="fas fa-list-alt me-1"></i>Integration Logs
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="patients-tab" data-bs-toggle="tab" data-bs-target="#patients" type="button" role="tab" aria-controls="patients" aria-selected="false">
+                        <i class="fas fa-users me-1"></i>Linked Patients
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="systemDetailsTabsContent">
+                <!-- Data Mappings Tab -->
+                <div class="tab-pane fade show active" id="mappings" role="tabpanel" aria-labelledby="mappings-tab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Data Field Mappings</h5>
+                        <a href="{{ url_for('emr.add_mapping', system_id=system.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Add Mapping
+                        </a>
+                    </div>
+                    
+                    {% if mappings %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Our Field</th>
+                                        <th>External Field</th>
+                                        <th>Entity Type</th>
+                                        <th>Data Type</th>
+                                        <th>Required</th>
+                                        <th>Transformation</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mapping in mappings %}
+                                        <tr>
+                                            <td><code>{{ mapping.our_field }}</code></td>
+                                            <td><code>{{ mapping.external_field }}</code></td>
+                                            <td>{{ mapping.entity_type }}</td>
+                                            <td>{{ mapping.data_type }}</td>
+                                            <td>
+                                                {% if mapping.is_required %}
+                                                    <span class="text-success"><i class="fas fa-check-circle"></i></span>
+                                                {% else %}
+                                                    <span class="text-muted"><i class="fas fa-minus-circle"></i></span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if mapping.transformation_rule %}
+                                                    <button class="btn btn-sm btn-outline-info" title="{{ mapping.transformation_rule }}">
+                                                        <i class="fas fa-code"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <span class="text-muted">None</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-exchange-alt fa-3x mb-3 text-muted"></i>
+                            <p>No data mappings configured for this system.</p>
+                            <p class="text-muted">Data mappings define how fields in our system translate to the external system.</p>
+                            <a href="{{ url_for('emr.add_mapping', system_id=system.id) }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Data Mapping
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Integration Logs Tab -->
+                <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Recent Integration Logs</h5>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Filter logs">
+                            <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
+                            <button type="button" class="btn btn-outline-success" data-filter="success">Success</button>
+                            <button type="button" class="btn btn-outline-danger" data-filter="error">Errors</button>
+                            <button type="button" class="btn btn-outline-info" data-filter="inbound">Inbound</button>
+                            <button type="button" class="btn btn-outline-warning" data-filter="outbound">Outbound</button>
+                        </div>
+                    </div>
+                    
+                    {% if recent_logs %}
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="logsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Direction</th>
+                                        <th>Status</th>
+                                        <th>Entity Type</th>
+                                        <th>Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in recent_logs %}
+                                        <tr class="log-entry" 
+                                            data-status="{{ log.status }}" 
+                                            data-direction="{{ log.direction }}">
+                                            <td class="text-nowrap">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                            <td>
+                                                {% if log.direction == 'inbound' %}
+                                                    <span class="badge bg-info">Inbound</span>
+                                                {% elif log.direction == 'outbound' %}
+                                                    <span class="badge bg-warning">Outbound</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ log.direction }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if log.status == 'success' %}
+                                                    <span class="badge bg-success">Success</span>
+                                                {% elif log.status == 'error' %}
+                                                    <span class="badge bg-danger">Error</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ log.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ log.entity_type }}</td>
+                                            <td>{{ log.message }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="#" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download me-1"></i>Export Logs
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-list-alt fa-3x mb-3 text-muted"></i>
+                            <p>No integration logs available for this system.</p>
+                            <p class="text-muted">Logs will appear here after integrations are performed.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Linked Patients Tab -->
+                <div class="tab-pane fade" id="patients" role="tabpanel" aria-labelledby="patients-tab">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Patients Linked to This System</h5>
+                    </div>
+                    
+                    <div id="linkedPatientsContent">
+                        <div class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+                            <p>Loading linked patients...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Logs filtering
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        const logEntries = document.querySelectorAll('.log-entry');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const filter = this.getAttribute('data-filter');
+                
+                // Update active button
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter log entries
+                logEntries.forEach(entry => {
+                    if (filter === 'all') {
+                        entry.style.display = '';
+                    } else if (filter === 'success' || filter === 'error') {
+                        entry.style.display = entry.getAttribute('data-status') === filter ? '' : 'none';
+                    } else if (filter === 'inbound' || filter === 'outbound') {
+                        entry.style.display = entry.getAttribute('data-direction') === filter ? '' : 'none';
+                    }
+                });
+            });
+        });
+        
+        // Load linked patients
+        const loadLinkedPatients = async () => {
+            try {
+                // In production, this would fetch from an API endpoint
+                const patientsHtml = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Patient links will be displayed here once patients are connected to this system.
+                    </div>
+                    <div class="text-center py-3">
+                        <p>To link a patient to this system, go to the patient's profile and visit:</p>
+                        <p><strong>Patient Details > External Systems > Link to System</strong></p>
+                    </div>
+                `;
+                
+                document.getElementById('linkedPatientsContent').innerHTML = patientsHtml;
+            } catch (error) {
+                console.error('Error loading linked patients:', error);
+                document.getElementById('linkedPatientsContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error loading linked patients. Please try again later.
+                    </div>
+                `;
+            }
+        };
+        
+        // Load linked patients when the tab is shown
+        const patientsTab = document.getElementById('patients-tab');
+        patientsTab.addEventListener('shown.bs.tab', loadLinkedPatients);
+    });
+</script>
+{% endblock %}
