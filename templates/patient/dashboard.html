@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reading Types Distribution
     {% if reading_types_dict %}
         const readingTypes = {
-            labels: [{% for key, value in reading_types_dict.items() %}'{{ key|replace('_', ' ')|title }'{% if not loop.last %}, {% endif %}{% endfor %}],
+            labels: [{% for key, value in reading_types_dict.items() %}'{{ key|replace("_", " ")|title }}'{% if not loop.last %}, {% endif %}{% endfor %}],
             data: [{% for key, value in reading_types_dict.items() %}{{ value }}{% if not loop.last %}, {% endif %}{% endfor %}]
         };
         

@@ -3,10 +3,11 @@ from flask_login import current_user, login_required
 from datetime import datetime, timedelta
 
 from app import db
-from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile
+from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile, Prediction
 from services.prediction import predict_risk_score
 from services.device_integration import sync_devices
 from services.alerts import check_readings_for_alerts
+from services.ai_predictions import predict_disease_risk
 
 patient_bp = Blueprint('patient', __name__, url_prefix='/patient')
 
@@ -404,3 +405,84 @@ def book_test():
     return render_template('patient/book_test.html', 
                           patient=patient, 
                           test_types=test_types)
+
+@patient_bp.route('/ai-prediction/<condition>')
+@login_required
+def ai_prediction(condition):
+    """
+    Generate AI-based disease prediction for the specified condition.
+    Conditions: diabetes, hypertension, cardiovascular
+    """
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Validate condition
+    valid_conditions = ['diabetes', 'hypertension', 'cardiovascular']
+    if condition not in valid_conditions:
+        flash(f'Invalid condition type. Must be one of: {", ".join(valid_conditions)}', 'danger')
+        return redirect(url_for('patient.dashboard'))
+    
+    # Get the most recent prediction, if any
+    recent_prediction = Prediction.query.join(PredictionModel).filter(
+        Prediction.patient_id == patient.id,
+        PredictionModel.target_condition == condition
+    ).order_by(Prediction.timestamp.desc()).first()
+    
+    # Check if we have a recent prediction (less than 7 days old)
+    use_cached = False
+    if recent_prediction and (datetime.utcnow() - recent_prediction.timestamp).days < 7:
+        use_cached = True
+        prediction_result = {
+            'success': True,
+            'risk_score': recent_prediction.prediction_value,
+            'key_factors': recent_prediction.notes.split('Key factors: ')[1].split('...')[0].split(', ') if 'Key factors: ' in recent_prediction.notes else [],
+            'assessment': recent_prediction.notes.split('Assessment: ')[1].split('...')[0] if 'Assessment: ' in recent_prediction.notes else 'No detailed assessment available.'
+        }
+    else:
+        # Generate a new prediction
+        try:
+            prediction_result = predict_disease_risk(patient.id, condition)
+        except Exception as e:
+            flash(f'Error generating prediction: {str(e)}', 'danger')
+            return redirect(url_for('patient.dashboard'))
+    
+    # Check if API key is missing
+    if not prediction_result['success'] and 'API_KEY' in prediction_result.get('message', ''):
+        flash('Gemini API key is required for AI predictions. Please contact your administrator.', 'warning')
+        return redirect(url_for('patient.dashboard'))
+    
+    return render_template('patient/ai_prediction.html',
+                          patient=patient,
+                          condition=condition,
+                          prediction=prediction_result,
+                          use_cached=use_cached,
+                          prediction_date=recent_prediction.timestamp if use_cached else datetime.utcnow())
+
+@patient_bp.route('/predictions')
+@login_required
+def predictions():
+    """View all predictions for the current patient"""
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Get all predictions, grouped by condition
+    predictions = db.session.query(
+        Prediction, PredictionModel
+    ).join(
+        PredictionModel
+    ).filter(
+        Prediction.patient_id == patient.id
+    ).order_by(
+        PredictionModel.target_condition,
+        Prediction.timestamp.desc()
+    ).all()
+    
+    # Group predictions by condition
+    predictions_by_condition = {}
+    for prediction, model in predictions:
+        condition = model.target_condition
+        if condition not in predictions_by_condition:
+            predictions_by_condition[condition] = []
+        predictions_by_condition[condition].append((prediction, model))
+    
+    return render_template('patient/predictions.html',
+                          patient=patient,
+                          predictions_by_condition=predictions_by_condition)

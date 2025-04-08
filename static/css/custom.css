@@ -218,6 +218,30 @@ main {
   color: var(--bs-danger);
 }
 
+/* AI Prediction Styles */
+.key-factors-list li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.recommendations-list li {
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.assessment-content {
+  line-height: 1.6;
+}
+
+.assessment-content p {
+  margin-bottom: 1rem;
+}
+
+.disclaimer {
+  font-size: 0.85rem;
+  border-left: 4px solid var(--bs-warning);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .chat-message {
@@ -232,4 +256,28 @@ main {
   .chart-container {
     height: 250px;
   }
+}
+
+/* AI Prediction Styles */
+.key-factors-list li {
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.recommendations-list li {
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.assessment-content {
+  line-height: 1.6;
+}
+
+.assessment-content p {
+  margin-bottom: 1rem;
+}
+
+.disclaimer {
+  font-size: 0.85rem;
+  border-left: 4px solid var(--bs-warning);
 }
