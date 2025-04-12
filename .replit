@@ -34,6 +34,15 @@ task = "shell.exec"
 args = "gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Reset DB"
+author = 41245023
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python3 -c \"from app import db; db.drop_all(); db.create_all()\""
+
 [[ports]]
 localPort = 5000
 externalPort = 80
