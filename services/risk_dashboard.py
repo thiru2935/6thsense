@@ -219,8 +219,8 @@ def get_risk_dashboard_data(patient_id, condition):
             "condition": prediction.condition,
             "value": prediction.prediction_value,
             "timestamp": prediction.timestamp.strftime("%Y-%m-%d %H:%M"),
-            "details": prediction.details,
-            "model_used": prediction.model_used
+            "details": prediction.assessment if hasattr(prediction, 'assessment') else '',
+            "model_used": prediction.model_id if hasattr(prediction, 'model_id') else None
         }
         
         return {

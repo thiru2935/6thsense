@@ -31,13 +31,13 @@
                     <h3 class="card-title">Your {{ condition|title }} Risk</h3>
                     
                     <div class="risk-score-gauge">
-                        <div class="risk-score-value {% if prediction.risk_score < 30 %}text-success{% elif prediction.risk_score < 60 %}text-warning{% else %}text-danger{% endif %}">
-                            {{ prediction.risk_score }}%
+                        <div class="risk-score-value {% if prediction.prediction_value < 30 %}text-success{% elif prediction.prediction_value < 60 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ prediction.prediction_value|int }}%
                         </div>
                         <div class="risk-score-label">
-                            {% if prediction.risk_score < 30 %}
+                            {% if prediction.prediction_value < 30 %}
                                 Low Risk
-                            {% elif prediction.risk_score < 60 %}
+                            {% elif prediction.prediction_value < 60 %}
                                 Moderate Risk
                             {% else %}
                                 High Risk
@@ -51,13 +51,13 @@
                             <div class="progress-bar bg-warning" role="progressbar" style="width: 33%;">Moderate</div>
                             <div class="progress-bar bg-danger" role="progressbar" style="width: 34%;">High</div>
                         </div>
-                        <div class="risk-pointer" style="left: {{ prediction.risk_score }}%;">
+                        <div class="risk-pointer" style="left: {{ prediction.prediction_value|int }}%;">
                             <i class="fas fa-caret-down"></i>
                         </div>
                     </div>
                     
                     <div class="risk-assessment-date mt-3">
-                        <p class="text-muted">Assessment date: {{ prediction.created_at.strftime('%b %d, %Y') }}</p>
+                        <p class="text-muted">Assessment date: {{ prediction.timestamp.strftime('%b %d, %Y') }}</p>
                         <a href="{{ url_for('patient.questionnaire', condition=condition) }}" class="btn btn-sm btn-primary">
                             <i class="fas fa-sync-alt"></i> Update Assessment
                         </a>
@@ -256,7 +256,7 @@
                         <div class="card bg-dark">
                             <div class="card-body text-center">
                                 <h5 class="text-light">Simulated Risk Score</h5>
-                                <div id="simulator-risk-score" class="display-4 text-warning">{{ prediction.risk_score }}%</div>
+                                <div id="simulator-risk-score" class="display-4 text-warning">{{ prediction.prediction_value|int }}%</div>
                                 <p id="simulator-risk-change" class="text-muted">Make changes to see risk impact</p>
                             </div>
                         </div>
@@ -368,7 +368,7 @@
         {% endfor %}
         
         // Set up risk simulator
-        const baseRisk = {{ prediction.risk_score }};
+        const baseRisk = {{ prediction.prediction_value|int }};
         
         {% if condition == 'diabetes' %}
             const sliderGlucose = document.getElementById('simulator-glucose');
