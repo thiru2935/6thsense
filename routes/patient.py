@@ -7,12 +7,15 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 from app import db
-from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile, Prediction, PredictionModel, PatientExternalMapping
+from models import User, PatientProfile, Device, HealthReading, Medication, MedicationLog, Alert, HealthRecord, RecordConsent, TestAppointment, ProviderProfile, Prediction, PredictionModel, PatientExternalMapping, RiskFactorInteraction, SymptomHeatmapEntry, WellnessJourney, WellnessBadge, MoodEntry
 from services.prediction import predict_risk_score
 from services.device_integration import sync_devices
 from services.alerts import check_readings_for_alerts
 from services.ai_predictions import predict_disease_risk
 from services.file_upload import save_uploaded_file, delete_health_record_file, get_file_path
+from services.risk_dashboard import generate_risk_factors, get_risk_dashboard_data
+from services.symptom_heatmap import get_symptom_heatmap, get_symptom_history, get_symptom_summary, COMMON_SYMPTOMS, BODY_LOCATIONS
+from services.wellness_journey import get_patient_journey_summary, get_mood_history
 
 patient_bp = Blueprint('patient', __name__, url_prefix='/patient')
 
