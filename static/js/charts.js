@@ -312,9 +312,15 @@ function createDiagnosisChart(elementId, diagnosisSummary) {
     return null;
   }
   
-  // Extract data for the chart
-  const labels = diagnosisSummary.map(d => d[0] || 'Undiagnosed');
-  const values = diagnosisSummary.map(d => d[1]);
+  // Extract data for the chart - support both formats (array of objects or array of arrays)
+  const labels = diagnosisSummary.map(d => {
+    // Check if it's an object (new format) or array (old format)
+    return d.diagnosis || d[0] || 'Undiagnosed';
+  });
+  const values = diagnosisSummary.map(d => {
+    // Check if it's an object (new format) or array (old format)
+    return d.count !== undefined ? d.count : d[1];
+  });
   
   // Generate colors
   const colors = [

@@ -59,11 +59,14 @@ def dashboard():
     ).order_by(Alert.timestamp.desc()).limit(10).all()
     
     # Get count summary of patients by diagnosis
-    diagnosis_summary = db.session.query(
+    diagnosis_query = db.session.query(
         PatientProfile.diagnosis, db.func.count(PatientProfile.id)
     ).filter(
         PatientProfile.id.in_(patient_ids)
     ).group_by(PatientProfile.diagnosis).all()
+    
+    # Convert SQLAlchemy Row objects to a list of dictionaries for JSON serialization
+    diagnosis_summary = [{'diagnosis': row[0], 'count': row[1]} for row in diagnosis_query]
     
     return render_template('provider/dashboard.html',
                            provider=provider,
