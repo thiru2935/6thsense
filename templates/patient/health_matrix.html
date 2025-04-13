@@ -180,16 +180,16 @@
                         
                         {% for prediction in predictions %}
                             <div class="row matrix-row 
-                                {% if prediction.risk_score < 30 %}matrix-normal
-                                {% elif prediction.risk_score < 60 %}matrix-warning
+                                {% if prediction.prediction_value < 30 %}matrix-normal
+                                {% elif prediction.prediction_value < 60 %}matrix-warning
                                 {% else %}matrix-abnormal{% endif %}">
                                 <div class="col-3">Risk</div>
                                 <div class="col-3">{{ prediction.condition|title }} Risk</div>
-                                <div class="col-3">{{ prediction.risk_score }}%</div>
+                                <div class="col-3">{{ prediction.prediction_value|int }}%</div>
                                 <div class="col-3">
-                                    {% if prediction.risk_score < 30 %}
+                                    {% if prediction.prediction_value < 30 %}
                                         <span class="badge bg-success">Low</span>
-                                    {% elif prediction.risk_score < 60 %}
+                                    {% elif prediction.prediction_value < 60 %}
                                         <span class="badge bg-warning">Moderate</span>
                                     {% else %}
                                         <span class="badge bg-danger">High</span>
