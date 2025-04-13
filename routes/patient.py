@@ -664,3 +664,156 @@ def profile():
         return redirect(url_for('patient.profile'))
         
     return render_template('patient/profile.html', patient=patient)
+
+
+@patient_bp.route('/health-matrix')
+@login_required
+def health_matrix():
+    """Health Matrix Visualization"""
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Get the most recent health readings of each type
+    readings = {}
+    reading_types = db.session.query(HealthReading.reading_type).filter_by(patient_id=patient.id).distinct().all()
+    for type_tuple in reading_types:
+        reading_type = type_tuple[0]
+        latest = HealthReading.query.filter_by(
+            patient_id=patient.id, 
+            reading_type=reading_type
+        ).order_by(HealthReading.timestamp.desc()).first()
+        
+        if latest:
+            readings[reading_type] = latest
+    
+    # Get medications for matrix
+    medications = Medication.query.filter_by(
+        patient_id=patient.id, 
+        is_active=True
+    ).all()
+    
+    # Get recent health records
+    health_records = HealthRecord.query.filter_by(
+        patient_id=patient.id
+    ).order_by(HealthRecord.recorded_at.desc()).limit(5).all()
+    
+    # Get latest predictions
+    predictions = Prediction.query.filter_by(
+        patient_id=patient.id
+    ).order_by(Prediction.created_at.desc()).limit(3).all()
+    
+    return render_template('patient/health_matrix.html', 
+                          patient=patient,
+                          readings=readings,
+                          medications=medications,
+                          health_records=health_records,
+                          predictions=predictions)
+
+
+@patient_bp.route('/risk-dashboard/<condition>')
+@login_required
+def risk_dashboard(condition):
+    """Interactive Risk Dashboard"""
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Validate condition parameter
+    valid_conditions = ['diabetes', 'hypertension', 'cardiovascular']
+    if condition not in valid_conditions:
+        flash('Invalid condition specified', 'danger')
+        return redirect(url_for('patient.dashboard'))
+    
+    # Get the most recent prediction for this condition
+    prediction = Prediction.query.filter_by(
+        patient_id=patient.id,
+        condition=condition
+    ).order_by(Prediction.created_at.desc()).first()
+    
+    if not prediction:
+        flash(f'No risk assessment available for {condition}. Please complete a questionnaire first.', 'warning')
+        return redirect(url_for('patient.questionnaire', condition=condition))
+    
+    # Get risk dashboard data
+    dashboard_data = get_risk_dashboard_data(patient.id, condition)
+    
+    # Get related readings
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    related_readings = {}
+    if condition == 'diabetes':
+        reading_types = ['blood_glucose', 'weight', 'hba1c']
+    elif condition == 'hypertension':
+        reading_types = ['blood_pressure', 'heart_rate']
+    elif condition == 'cardiovascular':
+        reading_types = ['blood_pressure', 'heart_rate', 'cholesterol', 'weight']
+    
+    for rtype in reading_types:
+        related_readings[rtype] = HealthReading.query.filter_by(
+            patient_id=patient.id,
+            reading_type=rtype
+        ).filter(HealthReading.timestamp >= thirty_days_ago).order_by(HealthReading.timestamp).all()
+    
+    return render_template('patient/risk_dashboard.html',
+                          patient=patient,
+                          condition=condition,
+                          prediction=prediction,
+                          dashboard_data=dashboard_data,
+                          related_readings=related_readings)
+
+
+@patient_bp.route('/symptom-heatmap')
+@login_required
+def symptom_heatmap():
+    """Symptom Severity Heatmap"""
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Get time period from query params (default 30 days)
+    days = int(request.args.get('days', 30))
+    condition = request.args.get('condition', 'general')
+    
+    # Get heatmap data
+    heatmap_data = get_symptom_heatmap(patient.id, condition, days)
+    
+    # Get symptom history for the selected symptom if provided
+    selected_symptom = request.args.get('symptom')
+    selected_body_part = request.args.get('body_part')
+    
+    symptom_history = None
+    if selected_symptom or selected_body_part:
+        symptom_history = get_symptom_history(
+            patient_id=patient.id,
+            symptom_type=selected_symptom,
+            body_location=selected_body_part,
+            days=days
+        )
+    
+    # Get summary for sidebar
+    symptom_summary = get_symptom_summary(patient.id, days)
+    
+    return render_template('patient/symptom_heatmap.html',
+                          patient=patient,
+                          heatmap_data=heatmap_data,
+                          symptom_history=symptom_history,
+                          symptom_summary=symptom_summary,
+                          common_symptoms=COMMON_SYMPTOMS,
+                          body_locations=BODY_LOCATIONS,
+                          selected_condition=condition,
+                          selected_symptom=selected_symptom,
+                          selected_body_part=selected_body_part,
+                          days=days)
+
+
+@patient_bp.route('/wellness-journey')
+@login_required
+def wellness_journey():
+    """Wellness Journey and Achievement Tracker"""
+    patient = PatientProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Get journey data
+    journey_summary = get_patient_journey_summary(patient.id)
+    
+    # Get mood history data (last 30 days)
+    mood_history = get_mood_history(patient.id)
+    
+    return render_template('patient/wellness_journey.html',
+                          patient=patient,
+                          journey_summary=journey_summary,
+                          mood_history=mood_history)

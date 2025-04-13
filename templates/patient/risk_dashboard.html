@@ -1,0 +1,623 @@
+{% extends 'layout.html' %}
+
+{% block title %}Risk Dashboard - 6th Sense Health{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">{{ condition|title }} Risk Dashboard</h1>
+        <div>
+            <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <div class="btn-group">
+                <a href="{{ url_for('patient.risk_dashboard', condition='diabetes') }}" class="btn btn-outline-primary {% if condition == 'diabetes' %}active{% endif %}">
+                    Diabetes
+                </a>
+                <a href="{{ url_for('patient.risk_dashboard', condition='hypertension') }}" class="btn btn-outline-primary {% if condition == 'hypertension' %}active{% endif %}">
+                    Hypertension
+                </a>
+                <a href="{{ url_for('patient.risk_dashboard', condition='cardiovascular') }}" class="btn btn-outline-primary {% if condition == 'cardiovascular' %}active{% endif %}">
+                    Cardiovascular
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card risk-score-card mb-4">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Your {{ condition|title }} Risk</h3>
+                    
+                    <div class="risk-score-gauge">
+                        <div class="risk-score-value {% if prediction.risk_score < 30 %}text-success{% elif prediction.risk_score < 60 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ prediction.risk_score }}%
+                        </div>
+                        <div class="risk-score-label">
+                            {% if prediction.risk_score < 30 %}
+                                Low Risk
+                            {% elif prediction.risk_score < 60 %}
+                                Moderate Risk
+                            {% else %}
+                                High Risk
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="risk-score-meter">
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 33%;">Low</div>
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 33%;">Moderate</div>
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 34%;">High</div>
+                        </div>
+                        <div class="risk-pointer" style="left: {{ prediction.risk_score }}%;">
+                            <i class="fas fa-caret-down"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="risk-assessment-date mt-3">
+                        <p class="text-muted">Assessment date: {{ prediction.created_at.strftime('%b %d, %Y') }}</p>
+                        <a href="{{ url_for('patient.questionnaire', condition=condition) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-sync-alt"></i> Update Assessment
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card risk-stats-card">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar"></i> Risk Score Breakdown
+                </div>
+                <div class="card-body">
+                    {% if dashboard_data.risk_factors %}
+                        <div class="risk-factors-list">
+                            {% for factor in dashboard_data.risk_factors %}
+                                <div class="risk-factor-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="risk-factor-name">{{ factor.name }}</div>
+                                        <div class="risk-factor-value 
+                                            {% if factor.impact > 0 %}text-danger{% elif factor.impact < 0 %}text-success{% else %}text-secondary{% endif %}">
+                                            {% if factor.impact > 0 %}+{% endif %}{{ factor.impact }}%
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-1" style="height: 10px;">
+                                        <div class="progress-bar 
+                                            {% if factor.impact > 0 %}bg-danger{% elif factor.impact < 0 %}bg-success{% else %}bg-secondary{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ (factor.impact|abs)|min(100) }}%;">
+                                        </div>
+                                    </div>
+                                    <div class="risk-factor-detail text-muted small mt-1">
+                                        {{ factor.description }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No detailed risk factors available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i> Risk Analysis
+                </div>
+                <div class="card-body">
+                    {% if dashboard_data.risk_analysis %}
+                        <div class="risk-analysis">
+                            <div class="risk-analysis-insight mb-4">
+                                <h5>Key Insights</h5>
+                                <div class="card-text">{{ dashboard_data.risk_analysis.insight|safe }}</div>
+                            </div>
+                            
+                            <div class="risk-analysis-recommendations">
+                                <h5>Recommendations</h5>
+                                <ul class="list-group">
+                                    {% for recommendation in dashboard_data.risk_analysis.recommendations %}
+                                        <li class="list-group-item">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            {{ recommendation }}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No risk analysis available</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row">
+                {% for reading_type, readings in related_readings.items() %}
+                    {% if readings %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-heartbeat"></i> {{ reading_type|replace('_', ' ')|title }} Trends
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="chart-{{ reading_type }}" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            <div class="card interactive-risk-card">
+                <div class="card-header">
+                    <i class="fas fa-sliders-h"></i> Risk Factor Simulator
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Adjust the sliders below to see how changes in your health metrics could affect your {{ condition|title }} risk.
+                    </p>
+                    
+                    <div class="simulator-controls">
+                        {% if condition == 'diabetes' %}
+                            <div class="row mb-3">
+                                <label for="simulator-glucose" class="col-sm-3 col-form-label">Blood Glucose (mg/dL)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-glucose" min="80" max="300" value="120">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-glucose-value">120</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label for="simulator-bmi" class="col-sm-3 col-form-label">BMI</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-bmi" min="18" max="40" value="25">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-bmi-value">25</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label for="simulator-exercise" class="col-sm-3 col-form-label">Exercise (min/week)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-exercise" min="0" max="300" value="120">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-exercise-value">120</span>
+                                </div>
+                            </div>
+                        {% elif condition == 'hypertension' %}
+                            <div class="row mb-3">
+                                <label for="simulator-systolic" class="col-sm-3 col-form-label">Systolic BP (mmHg)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-systolic" min="90" max="200" value="120">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-systolic-value">120</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label for="simulator-diastolic" class="col-sm-3 col-form-label">Diastolic BP (mmHg)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-diastolic" min="60" max="120" value="80">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-diastolic-value">80</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label for="simulator-sodium" class="col-sm-3 col-form-label">Sodium Intake (mg/day)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-sodium" min="1000" max="6000" value="2300">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-sodium-value">2300</span>
+                                </div>
+                            </div>
+                        {% elif condition == 'cardiovascular' %}
+                            <div class="row mb-3">
+                                <label for="simulator-cholesterol" class="col-sm-3 col-form-label">Total Cholesterol (mg/dL)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-cholesterol" min="120" max="300" value="180">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-cholesterol-value">180</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label for="simulator-systolic" class="col-sm-3 col-form-label">Systolic BP (mmHg)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-systolic" min="90" max="200" value="120">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-systolic-value">120</span>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <label for="simulator-smoking" class="col-sm-3 col-form-label">Smoking (cigarettes/day)</label>
+                                <div class="col-sm-7">
+                                    <input type="range" class="form-range" id="simulator-smoking" min="0" max="40" value="0">
+                                </div>
+                                <div class="col-sm-2">
+                                    <span id="simulator-smoking-value">0</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="simulator-result mt-4">
+                        <div class="card bg-dark">
+                            <div class="card-body text-center">
+                                <h5 class="text-light">Simulated Risk Score</h5>
+                                <div id="simulator-risk-score" class="display-4 text-warning">{{ prediction.risk_score }}%</div>
+                                <p id="simulator-risk-change" class="text-muted">Make changes to see risk impact</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up chart data
+        {% for reading_type, readings in related_readings.items() %}
+            {% if readings %}
+                const ctx{{ reading_type|replace('_', '') }} = document.getElementById('chart-{{ reading_type }}').getContext('2d');
+                
+                const labels{{ reading_type|replace('_', '') }} = [
+                    {% for reading in readings %}
+                        '{{ reading.timestamp.strftime("%m/%d") }}',
+                    {% endfor %}
+                ];
+                
+                const data{{ reading_type|replace('_', '') }} = [
+                    {% for reading in readings %}
+                        {% if reading_type == 'blood_pressure' %}
+                            {
+                                y: {{ reading.value_systolic }},
+                                x: '{{ reading.timestamp.strftime("%m/%d") }}'
+                            },
+                        {% else %}
+                            {
+                                y: {{ reading.value }},
+                                x: '{{ reading.timestamp.strftime("%m/%d") }}'
+                            },
+                        {% endif %}
+                    {% endfor %}
+                ];
+                
+                {% if reading_type == 'blood_pressure' %}
+                    const dataDiastolic = [
+                        {% for reading in readings %}
+                            {
+                                y: {{ reading.value_diastolic }},
+                                x: '{{ reading.timestamp.strftime("%m/%d") }}'
+                            },
+                        {% endfor %}
+                    ];
+                    
+                    new Chart(ctx{{ reading_type|replace('_', '') }}, {
+                        type: 'line',
+                        data: {
+                            labels: labels{{ reading_type|replace('_', '') }},
+                            datasets: [
+                                {
+                                    label: 'Systolic',
+                                    data: data{{ reading_type|replace('_', '') }},
+                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                    borderWidth: 2,
+                                    tension: 0.2
+                                },
+                                {
+                                    label: 'Diastolic',
+                                    data: dataDiastolic,
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    borderWidth: 2,
+                                    tension: 0.2
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: false
+                                }
+                            }
+                        }
+                    });
+                {% else %}
+                    new Chart(ctx{{ reading_type|replace('_', '') }}, {
+                        type: 'line',
+                        data: {
+                            labels: labels{{ reading_type|replace('_', '') }},
+                            datasets: [{
+                                label: '{{ reading_type|replace("_", " ")|title }}',
+                                data: data{{ reading_type|replace('_', '') }},
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderWidth: 2,
+                                tension: 0.2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: false
+                                }
+                            }
+                        }
+                    });
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        
+        // Set up risk simulator
+        const baseRisk = {{ prediction.risk_score }};
+        
+        {% if condition == 'diabetes' %}
+            const sliderGlucose = document.getElementById('simulator-glucose');
+            const sliderBmi = document.getElementById('simulator-bmi');
+            const sliderExercise = document.getElementById('simulator-exercise');
+            
+            const outputGlucose = document.getElementById('simulator-glucose-value');
+            const outputBmi = document.getElementById('simulator-bmi-value');
+            const outputExercise = document.getElementById('simulator-exercise-value');
+            
+            sliderGlucose.addEventListener('input', updateSimulator);
+            sliderBmi.addEventListener('input', updateSimulator);
+            sliderExercise.addEventListener('input', updateSimulator);
+            
+            sliderGlucose.addEventListener('input', () => {
+                outputGlucose.textContent = sliderGlucose.value;
+            });
+            
+            sliderBmi.addEventListener('input', () => {
+                outputBmi.textContent = sliderBmi.value;
+            });
+            
+            sliderExercise.addEventListener('input', () => {
+                outputExercise.textContent = sliderExercise.value;
+            });
+            
+            function updateSimulator() {
+                const glucose = parseInt(sliderGlucose.value);
+                const bmi = parseFloat(sliderBmi.value);
+                const exercise = parseInt(sliderExercise.value);
+                
+                let riskChange = 0;
+                
+                // Simple simulation model, would be replaced with actual predictive model
+                if (glucose > 140) riskChange += (glucose - 140) * 0.2;
+                if (glucose < 120) riskChange -= (120 - glucose) * 0.1;
+                
+                if (bmi > 25) riskChange += (bmi - 25) * 2;
+                if (bmi < 25) riskChange -= (25 - bmi) * 1;
+                
+                if (exercise > 150) riskChange -= (exercise - 150) * 0.05;
+                if (exercise < 150) riskChange += (150 - exercise) * 0.05;
+                
+                const newRisk = Math.min(Math.max(Math.round(baseRisk + riskChange), 5), 95);
+                
+                const riskDisplay = document.getElementById('simulator-risk-score');
+                const riskChange = document.getElementById('simulator-risk-change');
+                
+                riskDisplay.textContent = newRisk + '%';
+                
+                if (newRisk < baseRisk) {
+                    riskDisplay.className = 'display-4 text-success';
+                    riskChange.textContent = `${Math.abs(newRisk - baseRisk)}% lower than your current risk`;
+                    riskChange.className = 'text-success';
+                } else if (newRisk > baseRisk) {
+                    riskDisplay.className = 'display-4 text-danger';
+                    riskChange.textContent = `${Math.abs(newRisk - baseRisk)}% higher than your current risk`;
+                    riskChange.className = 'text-danger';
+                } else {
+                    riskDisplay.className = 'display-4 text-warning';
+                    riskChange.textContent = `Same as your current risk`;
+                    riskChange.className = 'text-muted';
+                }
+            }
+        {% elif condition == 'hypertension' %}
+            const sliderSystolic = document.getElementById('simulator-systolic');
+            const sliderDiastolic = document.getElementById('simulator-diastolic');
+            const sliderSodium = document.getElementById('simulator-sodium');
+            
+            const outputSystolic = document.getElementById('simulator-systolic-value');
+            const outputDiastolic = document.getElementById('simulator-diastolic-value');
+            const outputSodium = document.getElementById('simulator-sodium-value');
+            
+            sliderSystolic.addEventListener('input', updateSimulator);
+            sliderDiastolic.addEventListener('input', updateSimulator);
+            sliderSodium.addEventListener('input', updateSimulator);
+            
+            sliderSystolic.addEventListener('input', () => {
+                outputSystolic.textContent = sliderSystolic.value;
+            });
+            
+            sliderDiastolic.addEventListener('input', () => {
+                outputDiastolic.textContent = sliderDiastolic.value;
+            });
+            
+            sliderSodium.addEventListener('input', () => {
+                outputSodium.textContent = sliderSodium.value;
+            });
+            
+            function updateSimulator() {
+                const systolic = parseInt(sliderSystolic.value);
+                const diastolic = parseInt(sliderDiastolic.value);
+                const sodium = parseInt(sliderSodium.value);
+                
+                let riskChange = 0;
+                
+                // Simple simulation model, would be replaced with actual predictive model
+                if (systolic > 120) riskChange += (systolic - 120) * 0.3;
+                if (systolic < 120) riskChange -= (120 - systolic) * 0.2;
+                
+                if (diastolic > 80) riskChange += (diastolic - 80) * 0.4;
+                if (diastolic < 80) riskChange -= (80 - diastolic) * 0.2;
+                
+                if (sodium > 2300) riskChange += (sodium - 2300) * 0.005;
+                if (sodium < 2300) riskChange -= (2300 - sodium) * 0.002;
+                
+                const newRisk = Math.min(Math.max(Math.round(baseRisk + riskChange), 5), 95);
+                
+                const riskDisplay = document.getElementById('simulator-risk-score');
+                const riskChangeDisplay = document.getElementById('simulator-risk-change');
+                
+                riskDisplay.textContent = newRisk + '%';
+                
+                if (newRisk < baseRisk) {
+                    riskDisplay.className = 'display-4 text-success';
+                    riskChangeDisplay.textContent = `${Math.abs(newRisk - baseRisk)}% lower than your current risk`;
+                    riskChangeDisplay.className = 'text-success';
+                } else if (newRisk > baseRisk) {
+                    riskDisplay.className = 'display-4 text-danger';
+                    riskChangeDisplay.textContent = `${Math.abs(newRisk - baseRisk)}% higher than your current risk`;
+                    riskChangeDisplay.className = 'text-danger';
+                } else {
+                    riskDisplay.className = 'display-4 text-warning';
+                    riskChangeDisplay.textContent = `Same as your current risk`;
+                    riskChangeDisplay.className = 'text-muted';
+                }
+            }
+        {% elif condition == 'cardiovascular' %}
+            const sliderCholesterol = document.getElementById('simulator-cholesterol');
+            const sliderSystolic = document.getElementById('simulator-systolic');
+            const sliderSmoking = document.getElementById('simulator-smoking');
+            
+            const outputCholesterol = document.getElementById('simulator-cholesterol-value');
+            const outputSystolic = document.getElementById('simulator-systolic-value');
+            const outputSmoking = document.getElementById('simulator-smoking-value');
+            
+            sliderCholesterol.addEventListener('input', updateSimulator);
+            sliderSystolic.addEventListener('input', updateSimulator);
+            sliderSmoking.addEventListener('input', updateSimulator);
+            
+            sliderCholesterol.addEventListener('input', () => {
+                outputCholesterol.textContent = sliderCholesterol.value;
+            });
+            
+            sliderSystolic.addEventListener('input', () => {
+                outputSystolic.textContent = sliderSystolic.value;
+            });
+            
+            sliderSmoking.addEventListener('input', () => {
+                outputSmoking.textContent = sliderSmoking.value;
+            });
+            
+            function updateSimulator() {
+                const cholesterol = parseInt(sliderCholesterol.value);
+                const systolic = parseInt(sliderSystolic.value);
+                const smoking = parseInt(sliderSmoking.value);
+                
+                let riskChange = 0;
+                
+                // Simple simulation model, would be replaced with actual predictive model
+                if (cholesterol > 200) riskChange += (cholesterol - 200) * 0.1;
+                if (cholesterol < 200) riskChange -= (200 - cholesterol) * 0.05;
+                
+                if (systolic > 120) riskChange += (systolic - 120) * 0.2;
+                if (systolic < 120) riskChange -= (120 - systolic) * 0.1;
+                
+                riskChange += smoking * 0.5;
+                
+                const newRisk = Math.min(Math.max(Math.round(baseRisk + riskChange), 5), 95);
+                
+                const riskDisplay = document.getElementById('simulator-risk-score');
+                const riskChangeDisplay = document.getElementById('simulator-risk-change');
+                
+                riskDisplay.textContent = newRisk + '%';
+                
+                if (newRisk < baseRisk) {
+                    riskDisplay.className = 'display-4 text-success';
+                    riskChangeDisplay.textContent = `${Math.abs(newRisk - baseRisk)}% lower than your current risk`;
+                    riskChangeDisplay.className = 'text-success';
+                } else if (newRisk > baseRisk) {
+                    riskDisplay.className = 'display-4 text-danger';
+                    riskChangeDisplay.textContent = `${Math.abs(newRisk - baseRisk)}% higher than your current risk`;
+                    riskChangeDisplay.className = 'text-danger';
+                } else {
+                    riskDisplay.className = 'display-4 text-warning';
+                    riskChangeDisplay.textContent = `Same as your current risk`;
+                    riskChangeDisplay.className = 'text-muted';
+                }
+            }
+        {% endif %}
+    });
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .risk-score-card {
+        background-color: var(--bs-dark);
+        color: var(--bs-light);
+    }
+    
+    .risk-score-gauge {
+        padding: 20px 0;
+    }
+    
+    .risk-score-value {
+        font-size: 3rem;
+        font-weight: bold;
+    }
+    
+    .risk-score-label {
+        font-size: 1.25rem;
+    }
+    
+    .risk-score-meter {
+        position: relative;
+        margin: 30px 0 20px;
+    }
+    
+    .risk-pointer {
+        position: absolute;
+        top: -15px;
+        transform: translateX(-50%);
+        font-size: 24px;
+        color: var(--bs-light);
+    }
+    
+    .risk-factor-item {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .risk-factor-item:last-child {
+        border-bottom: none;
+    }
+    
+    .risk-factor-name {
+        font-weight: 500;
+    }
+    
+    .risk-factor-value {
+        font-weight: bold;
+    }
+    
+    .simulator-controls {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}

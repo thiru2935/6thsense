@@ -1,0 +1,687 @@
+{% extends 'layout.html' %}
+
+{% block title %}Symptom Heatmap - 6th Sense Health{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">Symptom Heatmap</h1>
+        <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-9">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-fire"></i> Symptom Severity Heatmap
+                    </div>
+                    <div class="d-flex">
+                        <div class="btn-group me-2">
+                            {% for cond, symptoms in common_symptoms.items() %}
+                                <a href="{{ url_for('patient.symptom_heatmap', condition=cond, days=days) }}" 
+                                   class="btn btn-sm btn-outline-primary {% if selected_condition == cond %}active{% endif %}">
+                                    {{ cond|title }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                        <div class="btn-group">
+                            <a href="{{ url_for('patient.symptom_heatmap', condition=selected_condition, days=7) }}" 
+                               class="btn btn-sm btn-outline-secondary {% if days == 7 %}active{% endif %}">
+                                7 Days
+                            </a>
+                            <a href="{{ url_for('patient.symptom_heatmap', condition=selected_condition, days=30) }}" 
+                               class="btn btn-sm btn-outline-secondary {% if days == 30 %}active{% endif %}">
+                                30 Days
+                            </a>
+                            <a href="{{ url_for('patient.symptom_heatmap', condition=selected_condition, days=90) }}" 
+                               class="btn btn-sm btn-outline-secondary {% if days == 90 %}active{% endif %}">
+                                90 Days
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="heatmap-wrapper">
+                        {% if heatmap_data and heatmap_data.body_map %}
+                            <div class="human-body-map">
+                                <div class="body-svg-container">
+                                    <svg viewBox="0 0 300 600" xmlns="http://www.w3.org/2000/svg">
+                                        <!-- Human body silhouette -->
+                                        <path class="body-outline" d="M150,30 C120,30 100,50 100,80 L100,140 C70,160 50,200 50,240 L50,350 C50,380 70,400 80,420 L80,550 C80,570 90,580 100,590 L120,590 C130,580 140,570 140,550 L140,450 L160,450 L160,550 C160,570 170,580 180,590 L200,590 C210,580 220,570 220,550 L220,420 C230,400 250,380 250,350 L250,240 C250,200 230,160 200,140 L200,80 C200,50 180,30 150,30 Z"></path>
+                                        
+                                        <!-- Body parts with heat levels -->
+                                        {% for location, data in heatmap_data.body_map.items() %}
+                                            {% if location == 'head' %}
+                                                <circle id="{{ location }}" cx="150" cy="50" r="30" 
+                                                        class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                        data-location="{{ location }}"
+                                                        data-count="{{ data.entries|length }}"
+                                                        data-severity="{{ data.max_severity|default(0)|int }}"></circle>
+                                            {% elif location == 'neck' %}
+                                                <rect id="{{ location }}" x="135" y="80" width="30" height="20" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></rect>
+                                            {% elif location == 'chest' %}
+                                                <path id="{{ location }}" d="M110,100 L190,100 L190,200 L110,200 Z" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'abdomen' %}
+                                                <path id="{{ location }}" d="M110,200 L190,200 L190,280 L110,280 Z" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'back_upper' %}
+                                                <path id="{{ location }}" d="M110,100 L190,100 L190,200 L110,200 Z" 
+                                                      class="body-part body-part-back {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'back_lower' %}
+                                                <path id="{{ location }}" d="M110,200 L190,200 L190,280 L110,280 Z" 
+                                                      class="body-part body-part-back {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'arm_left' %}
+                                                <path id="{{ location }}" d="M60,150 L110,150 L110,250 L60,250 Z" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'arm_right' %}
+                                                <path id="{{ location }}" d="M190,150 L240,150 L240,250 L190,250 Z" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'hand_left' %}
+                                                <circle id="{{ location }}" cx="70" cy="270" r="20" 
+                                                        class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                        data-location="{{ location }}"
+                                                        data-count="{{ data.entries|length }}"
+                                                        data-severity="{{ data.max_severity|default(0)|int }}"></circle>
+                                            {% elif location == 'hand_right' %}
+                                                <circle id="{{ location }}" cx="230" cy="270" r="20" 
+                                                        class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                        data-location="{{ location }}"
+                                                        data-count="{{ data.entries|length }}"
+                                                        data-severity="{{ data.max_severity|default(0)|int }}"></circle>
+                                            {% elif location == 'leg_left' %}
+                                                <path id="{{ location }}" d="M110,280 L140,280 L140,450 L110,450 Z" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'leg_right' %}
+                                                <path id="{{ location }}" d="M160,280 L190,280 L190,450 L160,450 Z" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></path>
+                                            {% elif location == 'foot_left' %}
+                                                <rect id="{{ location }}" x="100" y="450" width="40" height="20" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></rect>
+                                            {% elif location == 'foot_right' %}
+                                                <rect id="{{ location }}" x="160" y="450" width="40" height="20" 
+                                                      class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                      data-location="{{ location }}"
+                                                      data-count="{{ data.entries|length }}"
+                                                      data-severity="{{ data.max_severity|default(0)|int }}"></rect>
+                                            {% elif location == 'shoulder_left' %}
+                                                <circle id="{{ location }}" cx="110" cy="120" r="15" 
+                                                        class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                        data-location="{{ location }}"
+                                                        data-count="{{ data.entries|length }}"
+                                                        data-severity="{{ data.max_severity|default(0)|int }}"></circle>
+                                            {% elif location == 'shoulder_right' %}
+                                                <circle id="{{ location }}" cx="190" cy="120" r="15" 
+                                                        class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                        data-location="{{ location }}"
+                                                        data-count="{{ data.entries|length }}"
+                                                        data-severity="{{ data.max_severity|default(0)|int }}"></circle>
+                                            {% elif location == 'hip_left' %}
+                                                <circle id="{{ location }}" cx="120" cy="280" r="15" 
+                                                        class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                        data-location="{{ location }}"
+                                                        data-count="{{ data.entries|length }}"
+                                                        data-severity="{{ data.max_severity|default(0)|int }}"></circle>
+                                            {% elif location == 'hip_right' %}
+                                                <circle id="{{ location }}" cx="180" cy="280" r="15" 
+                                                        class="body-part {% if data.entries %}heat-level-{{ data.max_severity|int }}{% endif %}"
+                                                        data-location="{{ location }}"
+                                                        data-count="{{ data.entries|length }}"
+                                                        data-severity="{{ data.max_severity|default(0)|int }}"></circle>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </svg>
+                                    
+                                    <div class="body-toggle-btn">
+                                        <button class="btn btn-sm btn-outline-secondary" id="toggle-view">
+                                            <i class="fas fa-sync-alt"></i> Rotate
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="severity-legend">
+                                    <div class="legend-title">Symptom Severity Scale</div>
+                                    <div class="legend-items">
+                                        <div class="legend-item">
+                                            <div class="legend-color heat-level-0"></div>
+                                            <div class="legend-label">None (0)</div>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color heat-level-2"></div>
+                                            <div class="legend-label">Mild (1-3)</div>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color heat-level-5"></div>
+                                            <div class="legend-label">Moderate (4-6)</div>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color heat-level-8"></div>
+                                            <div class="legend-label">Severe (7-9)</div>
+                                        </div>
+                                        <div class="legend-item">
+                                            <div class="legend-color heat-level-10"></div>
+                                            <div class="legend-label">Extreme (10)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if symptom_history %}
+                                <div class="symptom-details card mt-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-clipboard-list"></i> Symptom Details: 
+                                        {% if selected_symptom %}
+                                            <span class="badge bg-primary">{{ selected_symptom|replace('_', ' ')|title }}</span>
+                                        {% endif %}
+                                        {% if selected_body_part %}
+                                            <span class="badge bg-secondary">{{ selected_body_part|replace('_', ' ')|title }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="symptom-history-chart" height="250"></canvas>
+                                        
+                                        <div class="symptom-entries mt-4">
+                                            <h5>Entries ({{ symptom_history.entries|length }})</h5>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>Symptom</th>
+                                                            <th>Location</th>
+                                                            <th>Severity</th>
+                                                            <th>Notes</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for entry in symptom_history.entries %}
+                                                            <tr>
+                                                                <td>{{ entry.reported_at }}</td>
+                                                                <td>{{ entry.symptom_type|replace('_', ' ')|title }}</td>
+                                                                <td>{{ entry.body_location|replace('_', ' ')|title if entry.body_location else 'N/A' }}</td>
+                                                                <td>
+                                                                    <span class="badge heat-level-{{ entry.severity|int }}">
+                                                                        {{ entry.severity }}/10
+                                                                    </span>
+                                                                </td>
+                                                                <td>{{ entry.notes }}</td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="no-data-message p-5 text-center">
+                                <i class="fas fa-exclamation-circle fa-3x mb-3 text-muted"></i>
+                                <h5>No symptom data available</h5>
+                                <p>You haven't logged any symptoms in the selected time period.</p>
+                                <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addSymptomModal">
+                                    <i class="fas fa-plus"></i> Log a Symptom
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-plus-circle"></i> Log Symptom
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary btn-lg w-100" data-bs-toggle="modal" data-bs-target="#addSymptomModal">
+                        <i class="fas fa-plus"></i> Add New Symptom
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar"></i> Common Symptoms
+                </div>
+                <div class="list-group list-group-flush">
+                    {% if symptom_summary and symptom_summary.top_symptoms %}
+                        {% for symptom in symptom_summary.top_symptoms %}
+                            <a href="{{ url_for('patient.symptom_heatmap', condition=selected_condition, symptom=symptom.symptom_type, days=days) }}" 
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center
+                                      {% if selected_symptom == symptom.symptom_type %}active{% endif %}">
+                                {{ symptom.symptom_type|replace('_', ' ')|title }}
+                                <span class="badge rounded-pill heat-level-{{ symptom.max_severity|int }}">
+                                    {{ symptom.max_severity|int }}/10
+                                </span>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item text-muted">No symptoms logged</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i> Symptom Trends
+                </div>
+                <div class="card-body">
+                    <canvas id="symptom-trend-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Symptom Modal -->
+<div class="modal fade" id="addSymptomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log New Symptom</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="#" method="post" id="symptomForm">
+                    <div class="mb-3">
+                        <label for="symptomType" class="form-label">Symptom Type</label>
+                        <select class="form-select" id="symptomType" name="symptom_type" required>
+                            <option value="">Select a symptom...</option>
+                            {% for symptom in common_symptoms[selected_condition] %}
+                                <option value="{{ symptom }}">{{ symptom|replace('_', ' ')|title }}</option>
+                            {% endfor %}
+                            <option value="other">Other (specify)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="otherSymptomField" style="display: none;">
+                        <label for="otherSymptom" class="form-label">Specify Symptom</label>
+                        <input type="text" class="form-control" id="otherSymptom" name="other_symptom">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bodyLocation" class="form-label">Body Location</label>
+                        <select class="form-select" id="bodyLocation" name="body_location">
+                            <option value="">Select a location (optional)...</option>
+                            {% for location in body_locations %}
+                                <option value="{{ location }}">{{ location|replace('_', ' ')|title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="severityRange" class="form-label">Severity (0-10)</label>
+                        <div class="d-flex align-items-center">
+                            <input type="range" class="form-range flex-grow-1 me-2" id="severityRange" name="severity" min="0" max="10" value="5">
+                            <span id="severityValue" class="badge bg-primary">5</span>
+                        </div>
+                        <div class="severity-labels d-flex justify-content-between small text-muted">
+                            <span>None</span>
+                            <span>Mild</span>
+                            <span>Moderate</span>
+                            <span>Severe</span>
+                            <span>Extreme</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="symptomNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="symptomNotes" name="notes" rows="3" placeholder="Add any additional details about this symptom..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveSymptomBtn">Save Symptom</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Body view toggle
+        const toggleBtn = document.getElementById('toggle-view');
+        const bodyParts = document.querySelectorAll('.body-part');
+        const bodyPartsBack = document.querySelectorAll('.body-part-back');
+        let showingFront = true;
+        
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                showingFront = !showingFront;
+                
+                if (showingFront) {
+                    bodyParts.forEach(part => {
+                        if (!part.classList.contains('body-part-back')) {
+                            part.style.display = 'block';
+                        } else {
+                            part.style.display = 'none';
+                        }
+                    });
+                } else {
+                    bodyParts.forEach(part => {
+                        if (part.classList.contains('body-part-back')) {
+                            part.style.display = 'block';
+                        } else {
+                            part.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Initially hide back parts
+        bodyPartsBack.forEach(part => {
+            part.style.display = 'none';
+        });
+        
+        // Body part click handler
+        bodyParts.forEach(part => {
+            part.addEventListener('click', function() {
+                const location = this.getAttribute('data-location');
+                window.location.href = "{{ url_for('patient.symptom_heatmap', condition=selected_condition, days=days) }}" + "&body_part=" + location;
+            });
+        });
+        
+        // Severity slider
+        const severityRange = document.getElementById('severityRange');
+        const severityValue = document.getElementById('severityValue');
+        
+        if (severityRange && severityValue) {
+            severityRange.addEventListener('input', function() {
+                severityValue.textContent = this.value;
+                
+                // Change badge color based on severity
+                severityValue.className = 'badge';
+                if (this.value <= 3) {
+                    severityValue.classList.add('bg-success');
+                } else if (this.value <= 6) {
+                    severityValue.classList.add('bg-warning');
+                } else {
+                    severityValue.classList.add('bg-danger');
+                }
+            });
+        }
+        
+        // Show/hide "other" field based on symptom type selection
+        const symptomTypeSelect = document.getElementById('symptomType');
+        const otherSymptomField = document.getElementById('otherSymptomField');
+        
+        if (symptomTypeSelect && otherSymptomField) {
+            symptomTypeSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    otherSymptomField.style.display = 'block';
+                } else {
+                    otherSymptomField.style.display = 'none';
+                }
+            });
+        }
+        
+        // Save symptom button handler
+        const saveSymptomBtn = document.getElementById('saveSymptomBtn');
+        const symptomForm = document.getElementById('symptomForm');
+        
+        if (saveSymptomBtn && symptomForm) {
+            saveSymptomBtn.addEventListener('click', function() {
+                // In a real implementation, this would submit the form
+                alert('Symptom logging feature would be implemented in a real application');
+                $('#addSymptomModal').modal('hide');
+            });
+        }
+        
+        // Render symptom history chart if data exists
+        {% if symptom_history and symptom_history.entries %}
+            const ctx = document.getElementById('symptom-history-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [
+                        {% for entry in symptom_history.entries %}
+                            '{{ entry.reported_at }}',
+                        {% endfor %}
+                    ],
+                    datasets: [{
+                        label: 'Symptom Severity',
+                        data: [
+                            {% for entry in symptom_history.entries %}
+                                {{ entry.severity }},
+                            {% endfor %}
+                        ],
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            title: {
+                                display: true,
+                                text: 'Severity (0-10)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date Reported'
+                            }
+                        }
+                    }
+                }
+            });
+        {% endif %}
+        
+        // Render trend chart if data exists
+        {% if symptom_summary and symptom_summary.trends %}
+            const trendCtx = document.getElementById('symptom-trend-chart').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: [
+                        {% for date in symptom_summary.trends.dates %}
+                            '{{ date }}',
+                        {% endfor %}
+                    ],
+                    datasets: [{
+                        label: 'Symptom Count',
+                        data: [
+                            {% for count in symptom_summary.trends.counts %}
+                                {{ count }},
+                            {% endfor %}
+                        ],
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Symptoms'
+                            }
+                        }
+                    }
+                }
+            });
+        {% endif %}
+    });
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .human-body-map {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    .body-svg-container {
+        width: 300px;
+        position: relative;
+    }
+    
+    .body-outline {
+        fill: none;
+        stroke: var(--bs-dark);
+        stroke-width: 2;
+    }
+    
+    .body-part {
+        fill: rgba(200, 200, 200, 0.3);
+        stroke: var(--bs-dark);
+        stroke-width: 1;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .body-part:hover {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+    
+    .body-toggle-btn {
+        text-align: center;
+        margin-top: 10px;
+    }
+    
+    .severity-legend {
+        padding: 0 20px;
+        margin-top: 20px;
+    }
+    
+    .legend-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    
+    .legend-items {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .legend-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 0.8rem;
+    }
+    
+    .legend-color {
+        width: 25px;
+        height: 25px;
+        border-radius: 4px;
+        margin-bottom: 5px;
+    }
+    
+    .legend-label {
+        text-align: center;
+    }
+    
+    .heat-level-0 {
+        background-color: rgba(200, 200, 200, 0.3);
+    }
+    
+    .heat-level-1 {
+        background-color: rgba(253, 238, 143, 0.7);
+    }
+    
+    .heat-level-2 {
+        background-color: rgba(254, 217, 118, 0.7);
+    }
+    
+    .heat-level-3 {
+        background-color: rgba(254, 204, 92, 0.7);
+    }
+    
+    .heat-level-4 {
+        background-color: rgba(254, 178, 76, 0.7);
+    }
+    
+    .heat-level-5 {
+        background-color: rgba(253, 141, 60, 0.7);
+    }
+    
+    .heat-level-6 {
+        background-color: rgba(252, 120, 52, 0.7);
+    }
+    
+    .heat-level-7 {
+        background-color: rgba(252, 87, 53, 0.7);
+    }
+    
+    .heat-level-8 {
+        background-color: rgba(239, 59, 44, 0.7);
+    }
+    
+    .heat-level-9 {
+        background-color: rgba(214, 30, 34, 0.7);
+    }
+    
+    .heat-level-10 {
+        background-color: rgba(178, 24, 34, 0.7);
+    }
+    
+    .severity-labels {
+        margin-top: 5px;
+        padding: 0 5px;
+    }
+    
+    .symptom-details {
+        margin-top: 30px;
+    }
+    
+    .symptom-entries {
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}

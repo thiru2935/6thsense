@@ -20,6 +20,58 @@
             </div>
         </div>
     </div>
+    
+    <!-- Advanced Visualization Tools -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card visualization-tools-card">
+                <div class="card-header">
+                    <i class="fas fa-chart-network"></i> Advanced Health Visualization Tools
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="visualization-tool-card">
+                                <h5><i class="fas fa-table-cells me-2"></i> Health Matrix</h5>
+                                <p>Comprehensive view of all your health metrics in a color-coded matrix</p>
+                                <a href="{{ url_for('patient.health_matrix') }}" class="btn btn-primary">View Matrix</a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="visualization-tool-card">
+                                <h5><i class="fas fa-chart-column me-2"></i> Risk Dashboard</h5>
+                                <p>Interactive analysis of your disease risk factors and mitigation strategies</p>
+                                <div class="dropdown">
+                                    <button class="btn btn-primary dropdown-toggle" type="button" id="riskDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Risk Dashboard
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="riskDropdown">
+                                        <li><a class="dropdown-item" href="{{ url_for('patient.risk_dashboard', condition='diabetes') }}">Diabetes Risk</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('patient.risk_dashboard', condition='hypertension') }}">Hypertension Risk</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('patient.risk_dashboard', condition='cardiovascular') }}">Cardiovascular Risk</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="visualization-tool-card">
+                                <h5><i class="fas fa-fire me-2"></i> Symptom Heatmap</h5>
+                                <p>Visual mapping of symptom severity across your body and over time</p>
+                                <a href="{{ url_for('patient.symptom_heatmap') }}" class="btn btn-primary">View Heatmap</a>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="visualization-tool-card">
+                                <h5><i class="fas fa-award me-2"></i> Wellness Journey</h5>
+                                <p>Track your health progress, achievements, and mood patterns over time</p>
+                                <a href="{{ url_for('patient.wellness_journey') }}" class="btn btn-primary">View Journey</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Health Metrics Dashboard Cards -->
     <div class="row mb-4">

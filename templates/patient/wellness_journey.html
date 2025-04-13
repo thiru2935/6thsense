@@ -1,0 +1,757 @@
+{% extends 'layout.html' %}
+
+{% block title %}Wellness Journey - 6th Sense Health{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">Wellness Journey</h1>
+        <a href="{{ url_for('patient.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card wellness-journey-card">
+                <div class="card-body p-0">
+                    <div class="wellness-journey-header p-4 text-center text-light">
+                        <h3>Your Wellness Journey</h3>
+                        <p class="lead">Track your progress and achievements on your health journey</p>
+                    </div>
+                    
+                    {% if journey_summary %}
+                        <div class="wellness-progress p-4">
+                            <div class="row justify-content-between align-items-center">
+                                <div class="col-md-4 text-center">
+                                    <div class="progress-stats">
+                                        <div class="progress-circle">
+                                            <div class="progress-circle-inner">
+                                                <span class="progress-value">{{ journey_summary.progress.overall_progress|int }}%</span>
+                                                <span class="progress-label">Overall Progress</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-8">
+                                    <div class="progress-details">
+                                        <div class="row">
+                                            <div class="col-sm-4">
+                                                <div class="progress-category">
+                                                    <div class="progress-category-value">{{ journey_summary.progress.health_readings.percentage|int }}%</div>
+                                                    <div class="progress-category-bar">
+                                                        <div class="progress" style="height: 8px;">
+                                                            <div class="progress-bar bg-primary" role="progressbar" 
+                                                                 style="width: {{ journey_summary.progress.health_readings.percentage }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="progress-category-label">Health Tracking</div>
+                                                    <div class="progress-category-detail">
+                                                        {{ journey_summary.progress.health_readings.current }} of {{ journey_summary.progress.health_readings.target }} readings
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-sm-4">
+                                                <div class="progress-category">
+                                                    <div class="progress-category-value">{{ journey_summary.progress.medication_adherence.percentage|int }}%</div>
+                                                    <div class="progress-category-bar">
+                                                        <div class="progress" style="height: 8px;">
+                                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                                 style="width: {{ journey_summary.progress.medication_adherence.percentage }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="progress-category-label">Medication Adherence</div>
+                                                    <div class="progress-category-detail">
+                                                        {{ journey_summary.progress.medication_adherence.current }} of {{ journey_summary.progress.medication_adherence.target }} doses
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="col-sm-4">
+                                                <div class="progress-category">
+                                                    <div class="progress-category-value">{{ journey_summary.progress.lifestyle.percentage|int }}%</div>
+                                                    <div class="progress-category-bar">
+                                                        <div class="progress" style="height: 8px;">
+                                                            <div class="progress-bar bg-info" role="progressbar" 
+                                                                 style="width: {{ journey_summary.progress.lifestyle.percentage }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="progress-category-label">Lifestyle Goals</div>
+                                                    <div class="progress-category-detail">
+                                                        {{ journey_summary.progress.lifestyle.current }} of {{ journey_summary.progress.lifestyle.target }} activities
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="wellness-progress p-4 text-center">
+                            <p class="text-muted">No wellness journey data available yet.</p>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#startJourneyModal">
+                                Start Your Wellness Journey
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-award"></i> Achievements & Badges
+                </div>
+                <div class="card-body">
+                    {% if journey_summary and journey_summary.badges %}
+                        <div class="badges-container">
+                            <div class="badges-grid">
+                                {% for badge in journey_summary.badges %}
+                                    <div class="badge-item {% if not badge.is_earned %}badge-locked{% endif %}" data-bs-toggle="tooltip" title="{{ badge.description }}">
+                                        <div class="badge-icon">
+                                            {% if badge.is_earned %}
+                                                <i class="{{ badge.icon_class }} fa-3x text-{{ badge.color }}"></i>
+                                            {% else %}
+                                                <i class="fas fa-lock fa-3x text-muted"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="badge-name">{{ badge.name }}</div>
+                                        <div class="badge-level">
+                                            {% if badge.is_earned %}
+                                                Level {{ badge.level }}
+                                            {% else %}
+                                                Locked
+                                            {% endif %}
+                                        </div>
+                                        <div class="badge-date">
+                                            {% if badge.is_earned %}
+                                                Earned {{ badge.earned_date }}
+                                            {% else %}
+                                                Complete tasks to earn
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center p-4">
+                            <i class="fas fa-trophy fa-4x text-muted mb-3"></i>
+                            <h5>No badges earned yet</h5>
+                            <p>Continue tracking your health and meeting goals to earn badges and achievements</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-list-check"></i> Current Milestones
+                </div>
+                <div class="card-body">
+                    {% if journey_summary and journey_summary.current_milestones %}
+                        <div class="list-group">
+                            {% for milestone in journey_summary.current_milestones %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ milestone.name }}</h6>
+                                        <small>{{ milestone.progress|int }}%</small>
+                                    </div>
+                                    <p class="mb-1 small">{{ milestone.description }}</p>
+                                    <div class="progress mt-1" style="height: 5px;">
+                                        <div class="progress-bar bg-{{ milestone.color }}" role="progressbar" 
+                                             style="width: {{ milestone.progress }}%"></div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No active milestones</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-chart-line"></i> Wellness Trend
+                </div>
+                <div class="card-body">
+                    <canvas id="wellness-trend-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-face-smile"></i> Mood Tracker
+                </div>
+                <div class="card-body">
+                    <div class="mood-entry-form mb-4">
+                        <h5>How are you feeling today?</h5>
+                        <div class="mood-emoji-selector d-flex justify-content-between">
+                            <div class="mood-emoji" data-value="1" data-emoji="😫">
+                                <i class="fas fa-face-sad-tear fa-2x"></i>
+                                <span>Terrible</span>
+                            </div>
+                            <div class="mood-emoji" data-value="2" data-emoji="😔">
+                                <i class="fas fa-face-frown fa-2x"></i>
+                                <span>Bad</span>
+                            </div>
+                            <div class="mood-emoji" data-value="3" data-emoji="😐">
+                                <i class="fas fa-face-meh fa-2x"></i>
+                                <span>Okay</span>
+                            </div>
+                            <div class="mood-emoji" data-value="4" data-emoji="🙂">
+                                <i class="fas fa-face-smile fa-2x"></i>
+                                <span>Good</span>
+                            </div>
+                            <div class="mood-emoji" data-value="5" data-emoji="😁">
+                                <i class="fas fa-face-grin-beam fa-2x"></i>
+                                <span>Great</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mood-notes mt-3" style="display: none;">
+                            <textarea class="form-control" id="moodNotes" rows="2" placeholder="Any thoughts about how you're feeling today?"></textarea>
+                            <button class="btn btn-primary mt-2" id="logMoodBtn">Log Mood</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mood-history">
+                        <h5>Recent Mood History</h5>
+                        {% if mood_history %}
+                            <canvas id="mood-history-chart" height="200"></canvas>
+                            
+                            <div class="mood-entries mt-3">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Mood</th>
+                                                <th>Notes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for entry in mood_history.entries %}
+                                                <tr>
+                                                    <td>{{ entry.logged_at }}</td>
+                                                    <td>
+                                                        <span class="mood-emoji-display">
+                                                            {{ entry.mood_emoji }}
+                                                            <span class="mood-value-display">({{ entry.mood_value }})</span>
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ entry.notes }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No mood entries yet. Start tracking your mood to see patterns.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-hand-holding-heart"></i> Wellness Resources
+                </div>
+                <div class="card-body">
+                    <div class="resources-container">
+                        <div class="resource-card">
+                            <div class="resource-icon">
+                                <i class="fas fa-heart-pulse fa-3x text-danger"></i>
+                            </div>
+                            <div class="resource-content">
+                                <h5>Heart Health Tips</h5>
+                                <p>Simple daily practices to improve cardiovascular wellness</p>
+                                <a href="#" class="btn btn-sm btn-outline-danger">Learn More</a>
+                            </div>
+                        </div>
+                        
+                        <div class="resource-card">
+                            <div class="resource-icon">
+                                <i class="fas fa-apple-whole fa-3x text-success"></i>
+                            </div>
+                            <div class="resource-content">
+                                <h5>Nutrition Guidelines</h5>
+                                <p>Balanced diet recommendations for managing chronic conditions</p>
+                                <a href="#" class="btn btn-sm btn-outline-success">Learn More</a>
+                            </div>
+                        </div>
+                        
+                        <div class="resource-card">
+                            <div class="resource-icon">
+                                <i class="fas fa-person-walking fa-3x text-primary"></i>
+                            </div>
+                            <div class="resource-content">
+                                <h5>Exercise Plans</h5>
+                                <p>Customized physical activity programs for your health needs</p>
+                                <a href="#" class="btn btn-sm btn-outline-primary">Learn More</a>
+                            </div>
+                        </div>
+                        
+                        <div class="resource-card">
+                            <div class="resource-icon">
+                                <i class="fas fa-brain fa-3x text-info"></i>
+                            </div>
+                            <div class="resource-content">
+                                <h5>Mental Wellness</h5>
+                                <p>Strategies for reducing stress and improving mental health</p>
+                                <a href="#" class="btn btn-sm btn-outline-info">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Start Journey Modal -->
+<div class="modal fade" id="startJourneyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Start Your Wellness Journey</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Welcome to your personalized Wellness Journey! We'll help you track your progress and celebrate achievements as you manage your health.</p>
+                
+                <form id="journeyForm">
+                    <div class="mb-3">
+                        <label for="healthGoal" class="form-label">What's your main health goal?</label>
+                        <select class="form-select" id="healthGoal" name="health_goal">
+                            <option value="blood_glucose">Improve Blood Glucose Control</option>
+                            <option value="blood_pressure">Lower Blood Pressure</option>
+                            <option value="weight">Reach Healthy Weight</option>
+                            <option value="exercise">Increase Physical Activity</option>
+                            <option value="medication">Improve Medication Adherence</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="journeyFocus" class="form-label">Areas to focus on (select all that apply)</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focus1" name="focus" value="diet">
+                            <label class="form-check-label" for="focus1">Nutrition & Diet</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focus2" name="focus" value="exercise">
+                            <label class="form-check-label" for="focus2">Physical Activity</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focus3" name="focus" value="medication">
+                            <label class="form-check-label" for="focus3">Medication Management</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focus4" name="focus" value="monitoring">
+                            <label class="form-check-label" for="focus4">Health Monitoring</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="focus5" name="focus" value="mental">
+                            <label class="form-check-label" for="focus5">Mental Wellness</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="journeyLevel" class="form-label">How would you describe your current health management?</label>
+                        <select class="form-select" id="journeyLevel" name="journey_level">
+                            <option value="beginner">Just starting out (Beginner)</option>
+                            <option value="intermediate">Making progress (Intermediate)</option>
+                            <option value="advanced">Well-established routine (Advanced)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="createJourneyBtn">Create Journey</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tooltip initialization
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Mood selector
+        const moodEmojis = document.querySelectorAll('.mood-emoji');
+        const moodNotes = document.querySelector('.mood-notes');
+        let selectedMood = null;
+        
+        moodEmojis.forEach(emoji => {
+            emoji.addEventListener('click', function() {
+                // Reset previous selection
+                moodEmojis.forEach(e => e.classList.remove('selected'));
+                
+                // Set new selection
+                this.classList.add('selected');
+                selectedMood = {
+                    value: this.getAttribute('data-value'),
+                    emoji: this.getAttribute('data-emoji')
+                };
+                
+                // Show notes field
+                moodNotes.style.display = 'block';
+            });
+        });
+        
+        // Log mood button
+        const logMoodBtn = document.getElementById('logMoodBtn');
+        if (logMoodBtn) {
+            logMoodBtn.addEventListener('click', function() {
+                if (!selectedMood) {
+                    alert('Please select a mood');
+                    return;
+                }
+                
+                const notes = document.getElementById('moodNotes').value;
+                
+                // In a real implementation, this would send the data to the server
+                alert('Mood logging feature would be implemented in a real application');
+                
+                // Reset form
+                moodEmojis.forEach(e => e.classList.remove('selected'));
+                document.getElementById('moodNotes').value = '';
+                moodNotes.style.display = 'none';
+                selectedMood = null;
+            });
+        }
+        
+        // Create journey button
+        const createJourneyBtn = document.getElementById('createJourneyBtn');
+        if (createJourneyBtn) {
+            createJourneyBtn.addEventListener('click', function() {
+                // In a real implementation, this would send the form data to initialize a journey
+                alert('Journey creation feature would be implemented in a real application');
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('startJourneyModal'));
+                if (modal) modal.hide();
+            });
+        }
+        
+        // Render mood history chart if data exists
+        {% if mood_history and mood_history.entries %}
+            const moodChartCtx = document.getElementById('mood-history-chart').getContext('2d');
+            new Chart(moodChartCtx, {
+                type: 'line',
+                data: {
+                    labels: [
+                        {% for entry in mood_history.entries %}
+                            '{{ entry.logged_at }}',
+                        {% endfor %}
+                    ],
+                    datasets: [{
+                        label: 'Mood',
+                        data: [
+                            {% for entry in mood_history.entries %}
+                                {{ entry.mood_value }},
+                            {% endfor %}
+                        ],
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            min: 1,
+                            max: 5,
+                            title: {
+                                display: true,
+                                text: 'Mood (1-5)'
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        {% endif %}
+        
+        // Render wellness trend chart if journey data exists
+        {% if journey_summary and journey_summary.trends %}
+            const trendChartCtx = document.getElementById('wellness-trend-chart').getContext('2d');
+            new Chart(trendChartCtx, {
+                type: 'line',
+                data: {
+                    labels: [
+                        {% for date in journey_summary.trends.dates %}
+                            '{{ date }}',
+                        {% endfor %}
+                    ],
+                    datasets: [{
+                        label: 'Wellness Score',
+                        data: [
+                            {% for score in journey_summary.trends.wellness_scores %}
+                                {{ score }},
+                            {% endfor %}
+                        ],
+                        borderColor: 'rgb(153, 102, 255)',
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Wellness Score'
+                            }
+                        }
+                    }
+                }
+            });
+        {% endif %}
+        
+        // Circle progress animation
+        function animateProgressCircle() {
+            const progressCircle = document.querySelector('.progress-circle');
+            if (progressCircle) {
+                const progressValue = parseInt(document.querySelector('.progress-value').textContent);
+                const radius = 70;
+                const circumference = 2 * Math.PI * radius;
+                
+                // Generate SVG for progress circle
+                const progressSVG = `
+                    <svg class="progress-svg" width="160" height="160" viewBox="0 0 160 160">
+                        <circle class="progress-circle-bg" cx="80" cy="80" r="${radius}" 
+                                stroke-width="10" fill="none" stroke="rgba(200,200,200,0.3)"></circle>
+                        <circle class="progress-circle-value" cx="80" cy="80" r="${radius}" 
+                                stroke-width="10" fill="none" stroke="var(--bs-primary)"
+                                stroke-dasharray="${circumference}" 
+                                stroke-dashoffset="${circumference - (progressValue / 100) * circumference}"
+                                transform="rotate(-90 80 80)"></circle>
+                    </svg>
+                `;
+                
+                // Insert SVG
+                progressCircle.insertAdjacentHTML('afterbegin', progressSVG);
+            }
+        }
+        
+        // Call animation function
+        animateProgressCircle();
+    });
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .wellness-journey-card {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .wellness-journey-header {
+        background: linear-gradient(135deg, var(--bs-primary), var(--bs-purple));
+    }
+    
+    .progress-circle {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .progress-circle-inner {
+        text-align: center;
+        z-index: 2;
+    }
+    
+    .progress-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        display: block;
+        color: var(--bs-primary);
+    }
+    
+    .progress-label {
+        font-size: 1rem;
+    }
+    
+    .progress-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    .progress-circle-value {
+        transition: stroke-dashoffset 1s ease-in-out;
+    }
+    
+    .progress-category {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .progress-category-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .progress-category-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-top: 5px;
+    }
+    
+    .progress-category-detail {
+        font-size: 0.8rem;
+        color: var(--bs-secondary);
+    }
+    
+    .badges-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 20px;
+        padding: 10px;
+    }
+    
+    .badge-item {
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: 10px;
+        padding: 15px 10px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .badge-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .badge-locked {
+        opacity: 0.6;
+    }
+    
+    .badge-icon {
+        margin-bottom: 10px;
+    }
+    
+    .badge-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .badge-level {
+        font-size: 0.8rem;
+        color: var(--bs-info);
+    }
+    
+    .badge-date {
+        font-size: 0.7rem;
+        color: var(--bs-secondary);
+        margin-top: 5px;
+    }
+    
+    .mood-emoji-selector {
+        margin: 20px 0;
+    }
+    
+    .mood-emoji {
+        text-align: center;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .mood-emoji:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .mood-emoji.selected {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    .mood-emoji span {
+        display: block;
+        font-size: 0.8rem;
+        margin-top: 5px;
+    }
+    
+    .resources-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .resource-card {
+        display: flex;
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: 10px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .resource-card:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+    
+    .resource-icon {
+        flex: 0 0 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .resource-content {
+        flex: 1;
+    }
+    
+    .resource-content h5 {
+        margin-bottom: 5px;
+    }
+    
+    .resource-content p {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    
+    @media (max-width: 768px) {
+        .badges-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+    }
+</style>
+{% endblock %}
