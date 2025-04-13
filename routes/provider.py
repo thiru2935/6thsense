@@ -138,13 +138,41 @@ def patient_detail(patient_id):
     # Get readings for charts (last 30 days)
     since_date = datetime.utcnow() - timedelta(days=30)
     
-    glucose_readings = HealthReading.query.filter_by(
+    glucose_readings_query = HealthReading.query.filter_by(
         patient_id=patient_id, reading_type='blood_glucose'
     ).filter(HealthReading.timestamp >= since_date).order_by(HealthReading.timestamp).all()
     
-    bp_readings = HealthReading.query.filter_by(
+    # Convert SQLAlchemy objects to dictionaries for JSON serialization
+    glucose_readings = []
+    for reading in glucose_readings_query:
+        glucose_readings.append({
+            'id': reading.id,
+            'patient_id': reading.patient_id,
+            'reading_type': reading.reading_type,
+            'value': reading.value,
+            'unit': reading.unit,
+            'timestamp': reading.timestamp.isoformat(),
+            'is_abnormal': reading.is_abnormal,
+            'notes': reading.notes
+        })
+    
+    bp_readings_query = HealthReading.query.filter_by(
         patient_id=patient_id, reading_type='blood_pressure'
     ).filter(HealthReading.timestamp >= since_date).order_by(HealthReading.timestamp).all()
+    
+    # Convert SQLAlchemy objects to dictionaries for JSON serialization
+    bp_readings = []
+    for reading in bp_readings_query:
+        bp_readings.append({
+            'id': reading.id,
+            'patient_id': reading.patient_id,
+            'reading_type': reading.reading_type,
+            'value': reading.value,
+            'unit': reading.unit,
+            'timestamp': reading.timestamp.isoformat(),
+            'is_abnormal': reading.is_abnormal,
+            'notes': reading.notes
+        })
     
     # Get medications
     medications = Medication.query.filter_by(patient_id=patient_id).order_by(Medication.is_active.desc()).all()
