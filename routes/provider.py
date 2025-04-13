@@ -10,14 +10,8 @@ from models import (User, PatientProfile, ProviderProfile, ProviderPatientAssoci
 from services.prediction import predict_risk_score, get_patient_risk_factors
 from services.file_upload import save_uploaded_file, delete_health_record_file, get_file_path
 from services.risk_dashboard import get_risk_dashboard_data
-from services.symptom_heatmap import get_symptom_heatmap, get_symptom_history, get_symptom_summary
+from services.symptom_heatmap import get_symptom_heatmap, get_symptom_history, get_symptom_summary, COMMON_SYMPTOMS, BODY_LOCATIONS
 from services.wellness_journey import get_patient_journey_summary, get_mood_history
-
-# Constants needed for symptom heatmap
-COMMON_SYMPTOMS = ['chest_pain', 'fatigue', 'headache', 'dizziness', 'nausea', 'shortness_of_breath',
-                    'numbness', 'blurred_vision', 'joint_pain', 'excessive_thirst']
-                   
-BODY_LOCATIONS = ['head', 'chest', 'abdomen', 'upper_limbs', 'lower_limbs', 'back', 'general']
 
 provider_bp = Blueprint('provider', __name__, url_prefix='/provider')
 
