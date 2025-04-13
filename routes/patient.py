@@ -699,7 +699,7 @@ def health_matrix():
     # Get latest predictions
     predictions = Prediction.query.filter_by(
         patient_id=patient.id
-    ).order_by(Prediction.created_at.desc()).limit(3).all()
+    ).order_by(Prediction.timestamp.desc()).limit(3).all()
     
     return render_template('patient/health_matrix.html', 
                           patient=patient,
@@ -725,7 +725,7 @@ def risk_dashboard(condition):
     prediction = Prediction.query.filter_by(
         patient_id=patient.id,
         condition=condition
-    ).order_by(Prediction.created_at.desc()).first()
+    ).order_by(Prediction.timestamp.desc()).first()
     
     if not prediction:
         flash(f'No risk assessment available for {condition}. Please complete a questionnaire first.', 'warning')

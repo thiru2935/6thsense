@@ -27,7 +27,7 @@
                                     <div class="progress-stats">
                                         <div class="progress-circle">
                                             <div class="progress-circle-inner">
-                                                <span class="progress-value">{{ journey_summary.progress.overall_progress|int }}%</span>
+                                                <span class="progress-value">{{ journey_summary.overall_progress|default(0)|int }}%</span>
                                                 <span class="progress-label">Overall Progress</span>
                                             </div>
                                         </div>
@@ -39,48 +39,48 @@
                                         <div class="row">
                                             <div class="col-sm-4">
                                                 <div class="progress-category">
-                                                    <div class="progress-category-value">{{ journey_summary.progress.health_readings.percentage|int }}%</div>
+                                                    <div class="progress-category-value">{{ journey_summary.health_readings_percentage|default(0)|int }}%</div>
                                                     <div class="progress-category-bar">
                                                         <div class="progress" style="height: 8px;">
                                                             <div class="progress-bar bg-primary" role="progressbar" 
-                                                                 style="width: {{ journey_summary.progress.health_readings.percentage }}%"></div>
+                                                                 style="width: {{ journey_summary.health_readings_percentage|default(0) }}%"></div>
                                                         </div>
                                                     </div>
                                                     <div class="progress-category-label">Health Tracking</div>
                                                     <div class="progress-category-detail">
-                                                        {{ journey_summary.progress.health_readings.current }} of {{ journey_summary.progress.health_readings.target }} readings
+                                                        {{ journey_summary.health_readings_count|default(0) }} of {{ journey_summary.health_readings_target|default(10) }} readings
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="col-sm-4">
                                                 <div class="progress-category">
-                                                    <div class="progress-category-value">{{ journey_summary.progress.medication_adherence.percentage|int }}%</div>
+                                                    <div class="progress-category-value">{{ journey_summary.medication_adherence_percentage|default(0)|int }}%</div>
                                                     <div class="progress-category-bar">
                                                         <div class="progress" style="height: 8px;">
                                                             <div class="progress-bar bg-success" role="progressbar" 
-                                                                 style="width: {{ journey_summary.progress.medication_adherence.percentage }}%"></div>
+                                                                 style="width: {{ journey_summary.medication_adherence_percentage|default(0) }}%"></div>
                                                         </div>
                                                     </div>
                                                     <div class="progress-category-label">Medication Adherence</div>
                                                     <div class="progress-category-detail">
-                                                        {{ journey_summary.progress.medication_adherence.current }} of {{ journey_summary.progress.medication_adherence.target }} doses
+                                                        {{ journey_summary.medication_adherence_count|default(0) }} of {{ journey_summary.medication_adherence_target|default(10) }} doses
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="col-sm-4">
                                                 <div class="progress-category">
-                                                    <div class="progress-category-value">{{ journey_summary.progress.lifestyle.percentage|int }}%</div>
+                                                    <div class="progress-category-value">{{ journey_summary.lifestyle_percentage|default(0)|int }}%</div>
                                                     <div class="progress-category-bar">
                                                         <div class="progress" style="height: 8px;">
                                                             <div class="progress-bar bg-info" role="progressbar" 
-                                                                 style="width: {{ journey_summary.progress.lifestyle.percentage }}%"></div>
+                                                                 style="width: {{ journey_summary.lifestyle_percentage|default(0) }}%"></div>
                                                         </div>
                                                     </div>
                                                     <div class="progress-category-label">Lifestyle Goals</div>
                                                     <div class="progress-category-detail">
-                                                        {{ journey_summary.progress.lifestyle.current }} of {{ journey_summary.progress.lifestyle.target }} activities
+                                                        {{ journey_summary.lifestyle_count|default(0) }} of {{ journey_summary.lifestyle_target|default(10) }} activities
                                                     </div>
                                                 </div>
                                             </div>
