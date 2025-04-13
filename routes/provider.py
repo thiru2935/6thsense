@@ -647,11 +647,18 @@ def patient_health_matrix(patient_id):
     patient = PatientProfile.query.get_or_404(patient_id)
     patient_user = User.query.get(patient.user_id)
     
-    # Get health readings (last 30 days)
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    readings = HealthReading.query.filter_by(
-        patient_id=patient.id
-    ).filter(HealthReading.timestamp >= thirty_days_ago).order_by(HealthReading.timestamp.desc()).all()
+    # Get the most recent health readings of each type (formatted as a dictionary)
+    readings = {}
+    reading_types = db.session.query(HealthReading.reading_type).filter_by(patient_id=patient.id).distinct().all()
+    for type_tuple in reading_types:
+        reading_type = type_tuple[0]
+        latest = HealthReading.query.filter_by(
+            patient_id=patient.id, 
+            reading_type=reading_type
+        ).order_by(HealthReading.timestamp.desc()).first()
+        
+        if latest:
+            readings[reading_type] = latest
     
     # Get active medications
     medications = Medication.query.filter_by(
