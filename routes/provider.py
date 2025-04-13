@@ -9,6 +9,15 @@ from models import (User, PatientProfile, ProviderProfile, ProviderPatientAssoci
                     RecordConsent, TestAppointment)
 from services.prediction import predict_risk_score, get_patient_risk_factors
 from services.file_upload import save_uploaded_file, delete_health_record_file, get_file_path
+from services.risk_dashboard import get_risk_dashboard_data
+from services.symptom_heatmap import get_symptom_heatmap, get_symptom_history, get_symptom_summary
+from services.wellness_journey import get_patient_journey_summary, get_mood_history
+
+# Constants needed for symptom heatmap
+COMMON_SYMPTOMS = ['chest_pain', 'fatigue', 'headache', 'dizziness', 'nausea', 'shortness_of_breath',
+                    'numbness', 'blurred_vision', 'joint_pain', 'excessive_thirst']
+                   
+BODY_LOCATIONS = ['head', 'chest', 'abdomen', 'upper_limbs', 'lower_limbs', 'back', 'general']
 
 provider_bp = Blueprint('provider', __name__, url_prefix='/provider')
 
@@ -619,3 +628,205 @@ def profile():
         return redirect(url_for('provider.profile'))
     
     return render_template('provider/profile.html', provider=provider)
+
+@provider_bp.route('/patient/<int:patient_id>/health-matrix')
+@login_required
+def patient_health_matrix(patient_id):
+    """Health Matrix Visualization for provider to view patient data"""
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if this provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to view this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+        
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    
+    # Get health readings (last 30 days)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    readings = HealthReading.query.filter_by(
+        patient_id=patient.id
+    ).filter(HealthReading.timestamp >= thirty_days_ago).order_by(HealthReading.timestamp.desc()).all()
+    
+    # Get active medications
+    medications = Medication.query.filter_by(
+        patient_id=patient.id,
+        is_active=True
+    ).all()
+    
+    # Get recent health records
+    health_records = HealthRecord.query.filter_by(
+        patient_id=patient.id
+    ).order_by(HealthRecord.recorded_at.desc()).limit(5).all()
+    
+    # Get latest predictions
+    predictions = Prediction.query.filter_by(
+        patient_id=patient.id
+    ).order_by(Prediction.timestamp.desc()).limit(3).all()
+    
+    return render_template('patient/health_matrix.html', 
+                          patient=patient,
+                          provider=provider,
+                          patient_user=patient_user,
+                          is_provider_view=True,
+                          readings=readings,
+                          medications=medications,
+                          health_records=health_records,
+                          predictions=predictions)
+
+@provider_bp.route('/patient/<int:patient_id>/risk-dashboard/<condition>')
+@login_required
+def patient_risk_dashboard(patient_id, condition):
+    """Interactive Risk Dashboard for provider to view patient risk data"""
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if this provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to view this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+        
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    
+    # Validate condition parameter
+    valid_conditions = ['diabetes', 'hypertension', 'cardiovascular']
+    if condition not in valid_conditions:
+        flash('Invalid condition specified', 'danger')
+        return redirect(url_for('provider.patient_detail', patient_id=patient_id))
+    
+    # Get the most recent prediction for this condition
+    prediction = Prediction.query.filter_by(
+        patient_id=patient.id,
+        condition=condition
+    ).order_by(Prediction.timestamp.desc()).first()
+    
+    if not prediction:
+        flash(f'No risk assessment available for {condition}. Please have the patient complete a questionnaire first.', 'warning')
+        return redirect(url_for('provider.patient_detail', patient_id=patient_id))
+    
+    # Get risk dashboard data
+    dashboard_data = get_risk_dashboard_data(patient.id, condition)
+    
+    # Get related readings
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    related_readings = {}
+    if condition == 'diabetes':
+        reading_types = ['blood_glucose', 'weight', 'hba1c']
+    elif condition == 'hypertension':
+        reading_types = ['blood_pressure', 'heart_rate']
+    elif condition == 'cardiovascular':
+        reading_types = ['blood_pressure', 'heart_rate', 'cholesterol', 'weight']
+    
+    for rtype in reading_types:
+        related_readings[rtype] = HealthReading.query.filter_by(
+            patient_id=patient.id,
+            reading_type=rtype
+        ).filter(HealthReading.timestamp >= thirty_days_ago).order_by(HealthReading.timestamp).all()
+    
+    return render_template('patient/risk_dashboard.html',
+                          patient=patient,
+                          provider=provider,
+                          patient_user=patient_user,
+                          condition=condition,
+                          prediction=prediction,
+                          dashboard_data=dashboard_data,
+                          related_readings=related_readings,
+                          is_provider_view=True)
+
+@provider_bp.route('/patient/<int:patient_id>/symptom-heatmap')
+@login_required
+def patient_symptom_heatmap(patient_id):
+    """Symptom Severity Heatmap for provider to view patient symptoms"""
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if this provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to view this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+        
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    
+    # Get time period from query params (default 30 days)
+    days = int(request.args.get('days', 30))
+    condition = request.args.get('condition', 'general')
+    
+    # Get heatmap data
+    heatmap_data = get_symptom_heatmap(patient.id, condition, days)
+    
+    # Get symptom history for the selected symptom if provided
+    selected_symptom = request.args.get('symptom')
+    selected_body_part = request.args.get('body_part')
+    
+    symptom_history = None
+    if selected_symptom or selected_body_part:
+        symptom_history = get_symptom_history(
+            patient_id=patient.id,
+            symptom_type=selected_symptom,
+            body_location=selected_body_part,
+            days=days
+        )
+    
+    # Get summary for sidebar
+    symptom_summary = get_symptom_summary(patient.id, days)
+    
+    return render_template('patient/symptom_heatmap.html',
+                          patient=patient,
+                          provider=provider,
+                          patient_user=patient_user,
+                          heatmap_data=heatmap_data,
+                          symptom_history=symptom_history,
+                          symptom_summary=symptom_summary,
+                          common_symptoms=COMMON_SYMPTOMS,
+                          body_locations=BODY_LOCATIONS,
+                          selected_condition=condition,
+                          selected_symptom=selected_symptom,
+                          selected_body_part=selected_body_part,
+                          days=days,
+                          is_provider_view=True)
+
+@provider_bp.route('/patient/<int:patient_id>/wellness-journey')
+@login_required
+def patient_wellness_journey(patient_id):
+    """Wellness Journey and Achievement Tracker for provider to view patient data"""
+    provider = ProviderProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # Check if this provider is associated with this patient
+    assoc = ProviderPatientAssociation.query.filter_by(
+        provider_id=provider.id, patient_id=patient_id
+    ).first()
+    
+    if not assoc:
+        flash('You are not authorized to view this patient', 'danger')
+        return redirect(url_for('provider.patients'))
+        
+    patient = PatientProfile.query.get_or_404(patient_id)
+    patient_user = User.query.get(patient.user_id)
+    
+    # Get journey data
+    journey_summary = get_patient_journey_summary(patient.id)
+    
+    # Get mood history data (last 30 days)
+    mood_history = get_mood_history(patient.id)
+    
+    return render_template('patient/wellness_journey.html',
+                          patient=patient,
+                          provider=provider,
+                          patient_user=patient_user,
+                          journey_summary=journey_summary,
+                          mood_history=mood_history,
+                          is_provider_view=True)

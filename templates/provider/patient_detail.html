@@ -79,6 +79,53 @@
             <i class="fas fa-comment-medical me-2"></i>Send Message
         </button>
     </div>
+    
+    <!-- Advanced Health Visualizations -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Advanced Health Visualizations</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <a href="{{ url_for('provider.patient_health_matrix', patient_id=patient.id) }}" class="card h-100 text-decoration-none">
+                        <div class="card-body text-center">
+                            <i class="fas fa-project-diagram fa-3x mb-3 text-primary"></i>
+                            <h5>Health Matrix</h5>
+                            <p class="text-muted small">Comprehensive visualization of patient health data relationships</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <a href="{{ url_for('provider.patient_risk_dashboard', patient_id=patient.id, condition='diabetes') }}" class="card h-100 text-decoration-none">
+                        <div class="card-body text-center">
+                            <i class="fas fa-tachometer-alt fa-3x mb-3 text-danger"></i>
+                            <h5>Risk Dashboard</h5>
+                            <p class="text-muted small">Interactive assessment of patient's risk factors and trends</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <a href="{{ url_for('provider.patient_symptom_heatmap', patient_id=patient.id) }}" class="card h-100 text-decoration-none">
+                        <div class="card-body text-center">
+                            <i class="fas fa-fire fa-3x mb-3 text-warning"></i>
+                            <h5>Symptom Heatmap</h5>
+                            <p class="text-muted small">Visual representation of symptom severity and patterns</p>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-3 mb-3">
+                    <a href="{{ url_for('provider.patient_wellness_journey', patient_id=patient.id) }}" class="card h-100 text-decoration-none">
+                        <div class="card-body text-center">
+                            <i class="fas fa-road fa-3x mb-3 text-success"></i>
+                            <h5>Wellness Journey</h5>
+                            <p class="text-muted small">Patient's progress tracking and achievement visualization</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Risk Factors and Trends -->
     <div class="row mb-4">
