@@ -47,7 +47,7 @@
     </div>
     <div class="wave-divider">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 150">
-            <path fill="#0d1117" fill-opacity="1" d="M0,128L48,112C96,96,192,64,288,53.3C384,43,480,53,576,69.3C672,85,768,107,864,101.3C960,96,1056,64,1152,48C1248,32,1344,32,1392,32L1440,32L1440,150L1392,150C1344,150,1248,150,1152,150C1056,150,960,150,864,150C768,150,672,150,576,150C480,150,384,150,288,150C192,150,96,150,48,150L0,150Z"></path>
+            <path fill="#ffffff" fill-opacity="1" d="M0,128L48,112C96,96,192,64,288,53.3C384,43,480,53,576,69.3C672,85,768,107,864,101.3C960,96,1056,64,1152,48C1248,32,1344,32,1392,32L1440,32L1440,150L1392,150C1344,150,1248,150,1152,150C1056,150,960,150,864,150C768,150,672,150,576,150C480,150,384,150,288,150C192,150,96,150,48,150L0,150Z"></path>
         </svg>
     </div>
 </section>
@@ -326,7 +326,7 @@
 
 /* Features Section */
 .features-section {
-    background-color: #0d1117;
+    background-color: #ffffff;
     position: relative;
 }
 
@@ -350,19 +350,20 @@
 }
 
 .feature-card {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: #ffffff;
     border-radius: 1rem;
     padding: 2rem;
     height: 100%;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     transition: all 0.3s;
     text-align: center;
+    box-shadow: var(--health-card-shadow);
 }
 
 .feature-card:hover {
     transform: translateY(-10px);
-    box-shadow: var(--health-card-shadow);
-    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
+    border-color: rgba(26, 115, 232, 0.2);
 }
 
 .feature-icon-wrapper {
@@ -394,22 +395,23 @@
 
 /* Audience Section */
 .audience-section {
-    background-color: #0d1117;
+    background-color: #f8f9fa;
     padding: 3rem 0;
 }
 
 .audience-card {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: #ffffff;
     border-radius: 1rem;
     overflow: hidden;
     height: 100%;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     transition: all 0.3s;
+    box-shadow: var(--health-card-shadow);
 }
 
 .audience-card:hover {
     transform: translateY(-5px);
-    box-shadow: var(--health-card-shadow);
+    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
 }
 
 .patient-card {
@@ -422,8 +424,8 @@
 
 .audience-card-header {
     padding: 1.5rem;
-    background-color: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background-color: rgba(26, 115, 232, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
 }
@@ -501,16 +503,17 @@
 
 /* Security Section */
 .security-section {
-    background-color: #0d1117;
+    background-color: #ffffff;
     padding: 3rem 0;
 }
 
 .security-card {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: #ffffff;
     border-radius: 1rem;
     padding: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     transition: all 0.3s;
+    box-shadow: var(--health-card-shadow);
 }
 
 .security-card:hover {
@@ -545,24 +548,27 @@
 }
 
 .security-feature {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(26, 115, 232, 0.05);
     padding: 0.5rem 1rem;
     border-radius: 50px;
     font-size: 0.9rem;
+    color: var(--health-dark);
+    border: 1px solid rgba(26, 115, 232, 0.1);
 }
 
 /* CTA Section */
 .cta-section {
-    background-color: #0d1117;
+    background-color: #f8f9fa;
     padding: 4rem 0;
 }
 
 .cta-card {
-    background: linear-gradient(135deg, rgba(44, 123, 229, 0.1), rgba(0, 204, 142, 0.1));
+    background: linear-gradient(135deg, rgba(26, 115, 232, 0.05), rgba(52, 168, 83, 0.05));
     border-radius: 1rem;
     padding: 3rem 2rem;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--health-card-shadow);
 }
 
 .cta-title {
