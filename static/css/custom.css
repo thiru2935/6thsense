@@ -1,20 +1,20 @@
 /* Custom styles for the 6th Sense Health Platform */
 
-/* Health app color variables */
+/* Clean medical-inspired color palette */
 :root {
-  --health-primary: #2c7be5;
-  --health-secondary: #6e84a3;
-  --health-success: #00cc8e;
-  --health-info: #00b8d9;
-  --health-warning: #ffab00;
-  --health-danger: #f5325c;
-  --health-dark: #12263f;
-  --health-light: #f9fbfd;
-  --health-purple: #8957ff;
-  --health-teal: #02a8b5;
-  --health-blue-gradient: linear-gradient(135deg, #2c7be5, #0069ff);
-  --health-teal-gradient: linear-gradient(135deg, #02a8b5, #00cc8e);
-  --health-card-shadow: 0 0.75rem 1.5rem rgba(18, 38, 63, 0.1);
+  --health-primary: #1a73e8;      /* Medical blue */
+  --health-secondary: #5f6368;    /* Neutral gray */
+  --health-success: #34a853;      /* Clean green */
+  --health-info: #4285f4;         /* Light blue */
+  --health-warning: #fbbc05;      /* Muted yellow */
+  --health-danger: #ea4335;       /* Soft red */
+  --health-dark: #202124;         /* Dark charcoal */
+  --health-light: #f8f9fa;        /* Off-white */
+  --health-purple: #6200ee;       /* Accent purple */
+  --health-teal: #00bfa5;         /* Teal accent */
+  --health-blue-gradient: linear-gradient(135deg, #1a73e8, #4285f4);
+  --health-teal-gradient: linear-gradient(135deg, #00bfa5, #34a853);
+  --health-card-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
 }
 
 /* General Styles */
@@ -22,7 +22,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #0d1117;
+  background-color: #ffffff;
+  color: #202124;
 }
 
 main {
@@ -135,25 +136,25 @@ main {
   transition: all 0.3s;
   border-radius: 0.75rem;
   margin-bottom: 1.5rem;
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: var(--health-card-shadow);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #ffffff;
 }
 
 .dashboard-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 1rem 2rem rgba(18, 38, 63, 0.15);
+  box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
 }
 
 .dashboard-card .card-header {
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(26, 115, 232, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding: 1rem 1.25rem;
   font-weight: 600;
   display: flex;
   align-items: center;
+  color: var(--health-primary);
 }
 
 .dashboard-card .card-header i {

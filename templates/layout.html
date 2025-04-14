@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}6th Sense - AI Chronic Disease Management{% endblock %}</title>
-    <!-- Bootstrap Dark Theme -->
-    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <!-- Bootstrap Theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Animate.css for animations -->
@@ -40,7 +40,7 @@
     </header>
     
     <!-- Navigation - Redesigned for mobile-first health app experience -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
         <div class="container">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -153,36 +153,36 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light py-4 mt-5">
+    <footer class="bg-light py-4 mt-5 border-top">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5><i class="fas fa-heartbeat me-2"></i>6th Sense</h5>
-                    <p>AI-powered chronic disease management platform for improved health outcomes.</p>
+                    <h5 class="text-primary"><i class="fas fa-heartbeat me-2"></i>6th Sense</h5>
+                    <p class="text-muted">AI-powered chronic disease management platform for improved health outcomes.</p>
                 </div>
                 <div class="col-md-3">
-                    <h5>Links</h5>
+                    <h5 class="text-primary">Links</h5>
                     <ul class="list-unstyled">
-                        <li><a href="{{ url_for('index') }}" class="text-light">Home</a></li>
+                        <li><a href="{{ url_for('index') }}" class="text-muted text-decoration-none">Home</a></li>
                         {% if current_user.is_authenticated %}
-                            <li><a href="{{ url_for('auth.logout') }}" class="text-light">Logout</a></li>
+                            <li><a href="{{ url_for('auth.logout') }}" class="text-muted text-decoration-none">Logout</a></li>
                         {% else %}
-                            <li><a href="{{ url_for('auth.login') }}" class="text-light">Login</a></li>
-                            <li><a href="{{ url_for('auth.register') }}" class="text-light">Register</a></li>
+                            <li><a href="{{ url_for('auth.login') }}" class="text-muted text-decoration-none">Login</a></li>
+                            <li><a href="{{ url_for('auth.register') }}" class="text-muted text-decoration-none">Register</a></li>
                         {% endif %}
                     </ul>
                 </div>
                 <div class="col-md-3">
-                    <h5>Contact</h5>
+                    <h5 class="text-primary">Contact</h5>
                     <ul class="list-unstyled">
-                        <li><i class="fas fa-envelope me-2"></i>support@6thsense.com</li>
-                        <li><i class="fas fa-phone me-2"></i>(123) 456-7890</li>
+                        <li class="text-muted"><i class="fas fa-envelope me-2 text-primary"></i>support@6thsense.com</li>
+                        <li class="text-muted"><i class="fas fa-phone me-2 text-primary"></i>(123) 456-7890</li>
                     </ul>
                 </div>
             </div>
             <hr>
             <div class="text-center">
-                <p>© {{ now.year }} 6th Sense. All rights reserved.</p>
+                <p class="text-muted">© {{ now.year }} 6th Sense. All rights reserved.</p>
             </div>
         </div>
     </footer>
