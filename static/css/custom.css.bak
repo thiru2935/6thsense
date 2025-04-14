@@ -104,7 +104,7 @@ main {
 }
 
 .navbar .nav-link:hover {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
   transform: translateY(-1px);
 }
 
@@ -112,7 +112,7 @@ main {
   display: flex;
   align-items: center;
   padding: 0.25rem 1rem;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
   border-radius: 50px;
   transition: all 0.2s;
 }
@@ -606,7 +606,7 @@ main {
   height: 1.25rem;
   margin-left: -2rem;
   margin-top: 0.125rem;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -696,7 +696,7 @@ main {
 .social-icon {
   width: 36px;
   height: 36px;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.7);
   border-radius: 50%;
   display: inline-flex;
@@ -842,12 +842,12 @@ main {
 .health-metric-card {
     transition: transform 0.3s, box-shadow 0.3s;
     border-radius: 10px;
-    background-color: #ffffff; padding: 15px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: var(--health-card-shadow); text-align: center;
+    background-color: var(--bs-dark);
 }
 
 .health-metric-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .health-metric-icon {
@@ -872,12 +872,12 @@ main {
 .health-metric-card {
     transition: transform 0.3s, box-shadow 0.3s;
     border-radius: 10px;
-    background-color: #ffffff; padding: 15px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: var(--health-card-shadow); text-align: center;
+    background-color: var(--bs-dark);
 }
 
 .health-metric-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .health-metric-icon {
@@ -928,7 +928,7 @@ main {
 
 /* Patient Cards for Provider Dashboard */
 .patient-card {
-    background-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
     padding: 15px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -1083,7 +1083,7 @@ main {
 }
 
 .device-gauge-value {
-    background-color: #ffffff; padding: 15px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: var(--health-card-shadow); text-align: center;
+    background-color: var(--bs-dark);
     width: 75%;
     height: 75%;
     border-radius: 50%;
