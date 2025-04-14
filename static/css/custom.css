@@ -1284,3 +1284,101 @@ main {
     border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: var(--health-card-shadow);
 }
+
+/* Devices section fixes */
+.card.bg-dark {
+    background-color: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #202124;
+}
+
+.card.bg-dark .card-body {
+    color: #202124;
+}
+
+.card-footer.bg-dark {
+    background-color: rgba(26, 115, 232, 0.03) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    color: #202124;
+}
+
+.device-info .device-detail .label {
+    color: #5f6368;
+}
+
+.device-info .device-detail .value {
+    color: #202124;
+}
+
+.text-center.py-5.bg-dark {
+    background-color: #ffffff !important;
+    color: #202124;
+}
+
+.text-center.py-5.bg-dark h4 {
+    color: var(--health-primary);
+}
+
+.text-center.py-5.bg-dark .text-muted {
+    color: #5f6368 !important;
+}
+
+/* Risk score presentation fixes */
+.risk-score-container .card-header {
+    background-color: rgba(26, 115, 232, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--health-primary);
+}
+
+.risk-score-container .card-body {
+    background-color: #ffffff;
+    color: #202124;
+}
+
+.risk-score {
+    color: var(--health-primary);
+}
+
+.risk-level-indicator {
+    background-color: rgba(26, 115, 232, 0.1);
+}
+
+.risk-level-indicator .progress-bar {
+    background-color: var(--health-primary);
+}
+
+.risk-factors-list li {
+    color: #202124;
+}
+
+/* Device pairing guide fixes */
+.card-header.bg-info {
+    background-color: var(--health-primary) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.device-guide-list li {
+    color: #202124;
+    margin-bottom: 10px;
+}
+
+.supported-devices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.supported-device-item {
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    color: #202124;
+}
+
+.supported-device-item .device-type-icon {
+    margin-right: 8px;
+}
