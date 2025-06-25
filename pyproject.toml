@@ -19,6 +19,8 @@ dependencies = [
     "flask-wtf>=1.2.2",
     "anthropic>=0.49.0",
 ]
+[tool.setuptools.packages.find]
+exclude = ["static*", "templates*"]
 
 [[tool.uv.index]]
 explicit = true

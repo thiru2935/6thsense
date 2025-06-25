@@ -82,10 +82,10 @@
 <style>
 /* Authentication Card Styles */
 .auth-card {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color:white;
     border-radius: 1rem;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0);
     box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.1);
     margin-bottom: 1.5rem;
 }
@@ -108,6 +108,7 @@
 
 .auth-logo-text {
     background: linear-gradient(to right, var(--health-primary), var(--health-info));
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: 700;
@@ -218,7 +219,7 @@
 }
 
 .security-text {
-    color: var(--health-secondary);
+    color: black;
     font-size: 0.9rem;
 }
 

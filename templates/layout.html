@@ -1,194 +1,343 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}6th Sense - AI Chronic Disease Management{% endblock %}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}6th Sense - AI Chronic Disease Management{% endblock %}
+    </title>
     <!-- Bootstrap Theme -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <!-- Animate.css for animations -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/custom.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{url_for('static', filename='css/index.css')}}"
+    />
     {% block head %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body {% if request.endpoint != 'index' %} style="background-color: #f8f9fa;"{% endif %}>
     <!-- Modern App Header with Gradient -->
     <header class="health-app-header">
-        <div class="container">
-            <div class="app-brand-wrapper py-3">
-                <a class="app-brand" href="{{ url_for('index') }}">
-                    <i class="fas fa-heartbeat pulse-icon me-2"></i>
-                    <span class="brand-text">6th Sense</span>
-                </a>
-                {% if current_user.is_authenticated %}
-                <span class="badge health-badge ms-2">
-                    {% if current_user.is_patient() %}
-                        Patient
-                    {% elif current_user.is_provider() %}
-                        Healthcare Provider  
-                    {% endif %}
-                </span>
-                {% endif %}
-            </div>
+      <div class="container">
+        <div class="app-brand-wrapper py-2 logo">
+          <a class="app-brand" href="{{ url_for('index') }}">
+            <i class="fas fa-heartbeat pulse-icon me-2"></i>
+            <span class="brand-text">6th Sense</span>
+          </a>
+          {% if current_user.is_authenticated %}
+          <span class="badge health-badge ms-2">
+            {% if current_user.is_patient() %} Patient {% elif
+            current_user.is_provider() %} Healthcare Provider {% endif %}
+          </span>
+          {% endif %}
         </div>
+      </div>
     </header>
-    
-    <!-- Navigation - Redesigned for mobile-first health app experience -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
-        <div class="container">
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
-                            <i class="fas fa-home nav-icon"></i> Home
-                        </a>
-                    </li>
-                    {% if current_user.is_authenticated %}
-                        {% if current_user.is_patient() %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.dashboard') }}">
-                                    <i class="fas fa-chart-line nav-icon"></i> Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.devices') }}">
-                                    <i class="fas fa-mobile-alt nav-icon"></i> Devices
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.medications') }}">
-                                    <i class="fas fa-pills nav-icon"></i> Medications
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.alerts') }}">
-                                    <i class="fas fa-bell nav-icon"></i> Alerts
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.health_records') }}">
-                                    <i class="fas fa-file-medical nav-icon"></i> Records
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('patient.test_appointments') }}">
-                                    <i class="fas fa-calendar-check nav-icon"></i> Appointments
-                                </a>
-                            </li>
-                        {% elif current_user.is_provider() %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('provider.dashboard') }}">
-                                    <i class="fas fa-chart-line nav-icon"></i> Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('provider.patients') }}">
-                                    <i class="fas fa-users nav-icon"></i> Patients
-                                </a>
-                            </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('chatbot.index') }}">
-                                <i class="fas fa-robot nav-icon"></i> AI Assistant
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-                <ul class="navbar-nav">
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle user-menu" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user-circle user-icon"></i>
-                                <span class="username">{{ current_user.first_name or current_user.username }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                {% if current_user.is_patient() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('patient.profile') }}"><i class="fas fa-id-card me-2"></i>My Profile</a></li>
-                                {% elif current_user.is_provider() %}
-                                    <li><a class="dropdown-item" href="{{ url_for('provider.profile') }}"><i class="fas fa-id-card me-2"></i>My Profile</a></li>
-                                {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link btn btn-outline-info btn-sm me-2" href="{{ url_for('auth.login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link btn btn-info btn-sm" href="{{ url_for('auth.register') }}">Register</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+    {% if current_user.is_authenticated %}
+    <nav class="navbar1 gsap-nav navbar-expand-lg navbar-collapse navbar-light sticky-top">
+      <div class="container1">
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav1"
+          aria-controls="navbarNav1"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div  id="navbarNav1" class="navbar-collapse navbar-expand-lg nav nav-tabs me-5">
+          <ul class="navbar-nav me-auto nav-class1">
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('index') }}">
+                <i class="fas fa-home nav-icon1"></i> Home
+              </a>
+            </li>
+            {% if
+            current_user.is_patient() %}
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('patient.dashboard') }}">
+                <i class="fas fa-chart-line nav-icon1"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('patient.devices') }}">
+                <i class="fas fa-mobile-alt nav-icon1"></i> Devices
+              </a>
+            </li>
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('patient.medications') }}">
+                <i class="fas fa-pills nav-icon1"></i> Medications
+              </a>
+            </li>
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('patient.alerts') }}">
+                <i class="fas fa-bell nav-icon1"></i> Alerts
+              </a>
+            </li>
+            <li class="nav-item1">
+              <a
+                class="nav-link1"
+                href="{{ url_for('patient.health_records') }}"
+              >
+                <i class="fas fa-file-medical nav-icon1"></i> Records
+              </a>
+            </li>
+            <li class="nav-item1">
+              <a
+                class="nav-link1"
+                href="{{ url_for('patient.test_appointments') }}"
+              >
+                <i class="fas fa-calendar-check nav-icon1"></i> Appointments
+              </a>
+            </li>
+            {% elif current_user.is_provider() %}
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('provider.dashboard') }}">
+                <i class="fas fa-chart-line nav-icon1"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('provider.patients') }}">
+                <i class="fas fa-users nav-icon1"></i> Patients
+              </a>
+            </li>
+            {% endif %}
+            <li class="nav-item1">
+              <a class="nav-link1" href="{{ url_for('chatbot.index') }}">
+                <i class="fas fa-robot nav-icon1"></i> AI Assistant
+              </a>
+            </li>
+          </ul>
+          {% if current_user.is_authenticated %}
+          <ul class="navbar-nav nav-class2">
+            <li class="nav-item2 dropdown">
+              <a
+                class="nav-link2 dropdown-toggle user-menu"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="fas fa-user-circle user-icon"></i>
+                <span class="username"
+                  >{{ current_user.first_name or current_user.username }}</span
+                >
+              </a>
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                aria-labelledby="navbarDropdown"
+              >
+                {% if current_user.is_patient() %}
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('patient.profile') }}"
+                    ><i class="fas fa-id-card me-2"></i>My Profile</a
+                  >
+                </li>
+                {% elif current_user.is_provider() %}
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('provider.profile') }}"
+                    ><i class="fas fa-id-card me-2"></i>My Profile</a
+                  >
+                </li>
+                {% endif %}
+                <li>
+                  <hr class="dropdown-divider" />
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.logout') }}"
+                    ><i class="fas fa-sign-out-alt me-2"></i>Logout</a
+                  >
+                </li>
+              </ul>
+            </li>
+          {% endif %}
+          </ul>
         </div>
+      </div>
     </nav>
-
+    {% else %}
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+      <div class="container">
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto col-md-10 gsap-navbarleft">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('index') }}">
+                <i class="fas fa-home nav-icon"></i> Home
+              </a>
+            </li>
+          </ul>
+          <ul class="navbar-nav me-auto gsap-navbarright">
+            <li class="nav-item">
+              <a
+                class="nav-link btn btn-sm me-2"
+                href="{{ url_for('auth.login') }}"
+                >Login</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link btn btn-sm"
+                href="{{ url_for('auth.register') }}"
+                >Register</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% endif %}
     <!-- Flash Messages -->
     <div class="container mt-3">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
     </div>
-
     <!-- Main Content -->
-    <main class="py-4">
-        {% block content %}{% endblock %}
-    </main>
+    <main class="py-4">{% block content %}{% endblock %}</main>
 
     <!-- Footer -->
-    <footer class="bg-light py-4 mt-5 border-top">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5 class="text-primary"><i class="fas fa-heartbeat me-2"></i>6th Sense</h5>
-                    <p class="text-muted">AI-powered chronic disease management platform for improved health outcomes.</p>
-                </div>
-                <div class="col-md-3">
-                    <h5 class="text-primary">Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ url_for('index') }}" class="text-muted text-decoration-none">Home</a></li>
-                        {% if current_user.is_authenticated %}
-                            <li><a href="{{ url_for('auth.logout') }}" class="text-muted text-decoration-none">Logout</a></li>
-                        {% else %}
-                            <li><a href="{{ url_for('auth.login') }}" class="text-muted text-decoration-none">Login</a></li>
-                            <li><a href="{{ url_for('auth.register') }}" class="text-muted text-decoration-none">Register</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
-                <div class="col-md-3">
-                    <h5 class="text-primary">Contact</h5>
-                    <ul class="list-unstyled">
-                        <li class="text-muted"><i class="fas fa-envelope me-2 text-primary"></i>support@6thsense.com</li>
-                        <li class="text-muted"><i class="fas fa-phone me-2 text-primary"></i>(123) 456-7890</li>
-                    </ul>
-                </div>
-            </div>
-            <hr>
-            <div class="text-center">
-                <p class="text-muted">© {{ now.year }} 6th Sense. All rights reserved.</p>
-            </div>
+    <footer class="bg-black py-4 mt-5 border-top">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <h5 class="text-white">
+              <i class="fas fa-heartbeat me-2"></i>6th Sense
+            </h5>
+            <p class="text-white">
+              AI-powered chronic disease management platform for improved health
+              outcomes.
+            </p>
+          </div>
+          <div class="col-md-3">
+            <h5 class="text-white">Links</h5>
+            <span
+              style="
+                display: block;
+                width: 30px;
+                height: 3px;
+                border-radius: 5px;
+                margin-bottom: 10px;
+              "
+              class="bg-white"
+            ></span>
+            <ul class="footer-link" class="list-unstyled">
+              <li>
+                <a href="{{ url_for('index') }}" class="text-decoration-none"
+                  >Home</a
+                >
+              </li>
+              {% if current_user.is_authenticated %}
+              <li>
+                <a
+                  href="{{ url_for('auth.logout') }}"
+                  class="text-decoration-none"
+                  >Logout</a
+                >
+              </li>
+              {% else %}
+              <li>
+                <a
+                  href="{{ url_for('auth.login') }}"
+                  class="text-decoration-none"
+                  >Login</a
+                >
+              </li>
+              <li>
+                <a
+                  href="{{ url_for('auth.register') }}"
+                  class="text-decoration-none"
+                  >Register</a
+                >
+              </li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="col-md-3">
+            <h5 class="text-white">Contact</h5>
+            <ul class="list-unstyled">
+              <li class="text-white">
+                <i class="fas fa-envelope me-2 text-white"></i
+                >support@6thsense.com
+              </li>
+              <li class="text-white">
+                <i class="fas fa-phone me-2 text-white"></i>(123) 456-7890
+              </li>
+            </ul>
+          </div>
         </div>
+        <span
+          style="
+            display: flex;
+            height: 2px;
+            width: 70vw;
+            justify-self: center;
+            margin-bottom: 30px;
+          "
+          class="bg-white"
+        ></span>
+        <div class="text-center">
+          <p class="text-white">
+            © {{ now.year }} 6th Sense. All rights reserved.
+          </p>
+        </div>
+      </div>
     </footer>
 
     <!-- Toast Container for notifications -->
-    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+    <div
+      id="toast-container"
+      class="toast-container position-fixed bottom-0 end-0 p-3"
+    ></div>
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -197,6 +346,38 @@
     <!-- Charts JS -->
     <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
     <!-- Additional scripts -->
+    <script src="{{url_for('static',filename='js/gsap_services_animation.js')}}" defer></script>
+    <script>
+      window.addEventListener("scroll", function () {
+        const navbar = document.querySelector(".navbar");
+        // Check if the page is scrolled down
+        if (window.scrollY > 0) {
+          navbar.classList.add("sticky");
+        } else {
+          navbar.classList.remove("sticky");
+        }
+      });
+    </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var currentPath = window.location.pathname;
+        document.querySelectorAll('.navbar1 .nav-link1').forEach(function(link) {
+          // Compare only the path part of the URL
+          if (link.pathname === currentPath) {
+            link.classList.add('active');
+          }
+        });
+      });
+    </script>
+    <!-- Minified UMD bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollToPlugin.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js" defer></script>
+    <script src="https://unpkg.com/split-type" defer></script>
+    <script src="{{url_for('static',filename='js/gsap_homepage_animation.js')}}" defer></script>
+    <script src="{{url_for('static',filename='js/working-timeline.js')}}" defer></script>
+    <script src="{{url_for('static',filename='js/contact_section.js')}}" defer></script>
     {% block scripts %}{% endblock %}
-</body>
+  </body>
 </html>

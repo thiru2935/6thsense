@@ -2,19 +2,30 @@
 
 /* Clean medical-inspired color palette */
 :root {
-  --health-primary: #1a73e8;      /* Medical blue */
-  --health-secondary: #5f6368;    /* Neutral gray */
-  --health-success: #34a853;      /* Clean green */
-  --health-info: #4285f4;         /* Light blue */
-  --health-warning: #fbbc05;      /* Muted yellow */
-  --health-danger: #ea4335;       /* Soft red */
-  --health-dark: #202124;         /* Dark charcoal */
-  --health-light: #f8f9fa;        /* Off-white */
-  --health-purple: #6200ee;       /* Accent purple */
-  --health-teal: #00bfa5;         /* Teal accent */
+  --health-primary: #1a73e8;
+  /* Medical blue */
+  --health-secondary: #5f6368;
+  /* Neutral gray */
+  --health-success: #34a853;
+  /* Clean green */
+  --health-info: #4285f4;
+  /* Light blue */
+  --health-warning: #fbbc05;
+  /* Muted yellow */
+  --health-danger: #ea4335;
+  /* Soft red */
+  --health-dark: #202124;
+  /* Dark charcoal */
+  --health-light: #f8f9fa;
+  /* Off-white */
+  --health-purple: #6200ee;
+  /* Accent purple */
+  --health-teal: #00bfa5;
+  /* Teal accent */
   --health-blue-gradient: linear-gradient(135deg, #1a73e8, #4285f4);
   --health-teal-gradient: linear-gradient(135deg, #00bfa5, #34a853);
-  --health-card-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  --health-card-shadow:rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+  --base-color: #D3DEDD;
 }
 
 /* General Styles */
@@ -22,8 +33,12 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
+  background-color: var(--base-color);
   color: #202124;
+  font-family: Poppinsregular;
+  font-weight: 400;
+  font-style: normal;
+  overflow-x: hidden;
 }
 
 main {
@@ -40,10 +55,9 @@ main {
 
 /* Modern Health App Header */
 .health-app-header {
-  background: var(--health-blue-gradient);
+  background: transparent;
   padding: 0.5rem 0;
-  color: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: black;
 }
 
 .app-brand-wrapper {
@@ -54,26 +68,33 @@ main {
 .app-brand {
   font-size: 1.75rem;
   font-weight: 700;
-  color: white;
+  color: black;
   text-decoration: none;
   display: flex;
   align-items: center;
 }
 
 .brand-text {
-  background: linear-gradient(to right, #ffffff, #e0e0e0);
+  background: linear-gradient(to right, black, rgb(44, 37, 37));
+  background-clip: text;
+  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
+  background-clip: text;
+  background-clip: text;
+  background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: 0.5px;
 }
 
 .pulse-icon {
-  color: white;
+  color: black;
   animation: pulse 1.5s infinite;
 }
 
 .health-badge {
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: rgb(8, 8, 8);
   color: white;
   padding: 0.35rem 0.75rem;
   border-radius: 50px;
@@ -84,47 +105,134 @@ main {
 
 /* Modern Navigation */
 .navbar {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   padding: 0.5rem 0;
-  margin-bottom: 1rem;
+  background-color: transparent;
+  transition:background-color 1s ease;
+}
+.navbar.sticky{
+  background-color:green !important;
 }
 
 .nav-icon {
   width: 20px;
   margin-right: 6px;
-  opacity: 0.85;
+  opacity: 1;
 }
 
 .navbar .nav-link {
   padding: 0.5rem 1rem;
   font-weight: 500;
-  border-radius: 4px;
   transition: all 0.2s;
-  margin: 0 0.25rem;
+  margin: 0 0.5rem;
+  position: relative;
+}
+
+.navbar .nav-link::before {
+  content: " ";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: -1;
+  transition: 0.2s;
+  border-radius: 25px;
 }
 
 .navbar .nav-link:hover {
-  background-color: #ffffff;
-  transform: translateY(-1px);
+  color: #ffffff;
 }
 
+.navbar .nav-link:hover::before {
+  background: linear-gradient(to bottom, #0d0e0d, #010102);
+  box-shadow: 0px 3px 15px 0px black;
+  transform: scale(1.2);
+}
+/*inner navbar*/
+.navbar1 {
+  padding: 0.5rem 0;
+  background-color: black;
+  transition:background-color 1s ease;
+  display:flex;
+  flex-direction:column;
+}
+.navbar1.sticky{
+  background-color:green !important;
+}
+.container1{
+  display:flex;
+  flex-direction:row;
+}
+
+.nav-icon1 {
+  width: 20px;
+  margin-right: 6px;
+  opacity: 1;
+}
+#navbarnav1{
+  display:inline-flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+}
+.nav-class1{
+  display:flex;
+  flex-direction:row;
+}
+.nav-item1{
+  display:inline-flex;
+}
+.navbar1 .nav-link1 {
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  margin: 0 0.5rem;
+  position: relative;
+  text-decoration:none;
+  color:white;
+}
+
+.navbar1 .nav-link1:hover{
+  color:black;
+  background-color:white;
+}
+
+.navbar1 .nav-link1.active,
+.navbar1 .nav-link1.active:focus,
+.navbar1 .nav-link1.active:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6 #dee2e6 #fff;
+  color: #495057;
+  font-weight: 600;
+}
+.nav-class2{
+  display:inline-flex;
+  flex-direction:row;
+}
 .user-menu {
   display: flex;
   align-items: center;
   padding: 0.25rem 1rem;
-  background-color: #ffffff;
-  border-radius: 50px;
+  background-color: inherit;
   transition: all 0.2s;
 }
 
 .user-menu:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  color: black;
+  background-color:white;
+  border-radius:5px;
+}
+.nav-link2{
+  text-decoration:none;
+  color:white;
+}
+.dropdown-menu li:hover {
+  color: black;
 }
 
 .user-icon {
   font-size: 1.25rem;
   margin-right: 8px;
-  color: var(--health-info);
+  color: rgb(26, 2, 243);
 }
 
 .username {
@@ -758,10 +866,12 @@ main {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.1);
     opacity: 0.7;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -769,11 +879,12 @@ main {
 }
 
 @keyframes fadeIn {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(10px);
   }
-  to { 
+
+  to {
     opacity: 1;
     transform: translateY(0);
   }
@@ -793,7 +904,7 @@ main {
     width: 16px;
     margin-right: 10px;
   }
-  
+
   .navbar .nav-link {
     padding: 0.5rem 0.75rem;
   }
@@ -803,22 +914,22 @@ main {
   .app-brand {
     font-size: 1.5rem;
   }
-  
+
   .risk-score-container {
     width: 140px;
     height: 140px;
   }
-  
+
   .risk-indicator {
     width: 100px;
     height: 100px;
     font-size: 2.5rem;
   }
-  
+
   .chart-container {
     height: 250px;
   }
-  
+
   .dashboard-card {
     margin-bottom: 1rem;
   }
@@ -828,11 +939,11 @@ main {
   .app-brand {
     font-size: 1.25rem;
   }
-  
+
   .chart-container {
     height: 200px;
   }
-  
+
   .footer-links, .contact-list {
     margin-top: 1.5rem;
   }
@@ -840,545 +951,557 @@ main {
 
 /* Health Metric Cards */
 .health-metric-card {
-    transition: transform 0.3s, box-shadow 0.3s;
-    border-radius: 10px;
-    background-color: #ffffff; padding: 15px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: var(--health-card-shadow); text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border-radius: 10px;
+  background-color: #ffffff;
+  padding: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--health-card-shadow);
+  text-align: center;
 }
 
 .health-metric-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
 }
 
 .health-metric-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: var(--bs-primary);
-    color: white;
-    font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--bs-primary);
+  color: white;
+  font-size: 24px;
 }
 
 .health-metric-value {
-    margin-top: 10px;
-    font-weight: bold;
+  margin-top: 10px;
+  font-weight: bold;
 }
 
 
 /* Health Metric Cards */
 .health-metric-card {
-    transition: transform 0.3s, box-shadow 0.3s;
-    border-radius: 10px;
-    background-color: #ffffff; padding: 15px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: var(--health-card-shadow); text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border-radius: 10px;
+  background-color: #ffffff;
+  padding: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--health-card-shadow);
+  text-align: center;
 }
 
 .health-metric-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
 }
 
 .health-metric-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: var(--bs-primary);
-    color: white;
-    font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--bs-primary);
+  color: white;
+  font-size: 24px;
 }
 
 .health-metric-value {
-    margin-top: 10px;
-    font-weight: bold;
+  margin-top: 10px;
+  font-weight: bold;
 }
 
 /* Health Records */
 .record-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    color: white;
-    font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  color: white;
+  font-size: 18px;
 }
 
 .record-content-preview {
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .record-card {
-    transition: transform 0.2s;
+  transition: transform 0.2s;
 }
 
 .record-card:hover {
-    transform: translateY(-2px);
+  transform: translateY(-2px);
 }
 
 #recordsGridView .card {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Patient Cards for Provider Dashboard */
 .patient-card {
-    background-color: #ffffff;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    height: 100%;
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  height: 100%;
 }
 
 .patient-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
 }
 
 .patient-avatar {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 18px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
 }
 
 /* Device Cards */
 .device-card {
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .device-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 20px rgba(0, 0, 0, 0.2);
 }
 
 .device-card-header {
-    padding: 1.5rem;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    background: var(--bs-dark);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  background: var(--bs-dark);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .device-type-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    color: white;
-    font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
 }
 
 .device-type-icon.small {
-    width: 30px;
-    height: 30px;
-    font-size: 14px;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
 }
 
 .device-status-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
+  position: absolute;
+  top: 15px;
+  right: 15px;
 }
 
 .device-name {
-    text-align: center;
-    margin-bottom: 1rem;
-    font-weight: 600;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: 600;
 }
 
 .device-info {
-    margin-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .device-detail {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .device-detail .label {
-    color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .device-readings-summary {
-    padding-top: 0.5rem;
+  padding-top: 0.5rem;
 }
 
 .latest-reading {
-    text-align: center;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
+  text-align: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
 }
 
 .reading-value {
-    font-size: 1.8rem;
-    font-weight: bold;
-    display: block;
+  font-size: 1.8rem;
+  font-weight: bold;
+  display: block;
 }
 
 .reading-unit {
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .reading-time {
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .inactive-device {
-    opacity: 0.6;
+  opacity: 0.6;
 }
 
 .device-status-icon {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-size: 20px;
-    color: white;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 20px;
+  color: white;
 }
 
 .device-status-icon.active {
-    background-color: var(--bs-success);
+  background-color: var(--bs-success);
 }
 
 .device-status-icon.offline {
-    background-color: var(--bs-warning);
+  background-color: var(--bs-warning);
 }
 
 .device-gauge {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: radial-gradient(circle at center, var(--bs-dark) 55%, var(--bs-info) 56%, var(--bs-info) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--bs-dark) 55%, var(--bs-info) 56%, var(--bs-info) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .device-gauge-value {
-    background-color: #ffffff; padding: 15px; border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: var(--health-card-shadow); text-align: center;
-    width: 75%;
-    height: 75%;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
+  background-color: #ffffff;
+  padding: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--health-card-shadow);
+  text-align: center;
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
 .supported-devices {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .supported-device-item {
-    display: flex;
-    align-items: center;
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
 }
 
 .supported-device-item .device-type-icon {
-    margin-right: 5px;
+  margin-right: 5px;
 }
 
 .device-guide-list li {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 /* External Systems Styling */
 .external-systems-list {
-    max-height: 350px;
-    overflow-y: auto;
+  max-height: 350px;
+  overflow-y: auto;
 }
 
 .external-system-item {
-    padding: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex;
-    align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
 }
 
 .system-icon {
-    width: 40px;
-    height: 40px;
-    background-color: rgba(32, 201, 151, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    margin-right: 1rem;
-    color: var(--health-teal);
-    font-size: 1.1rem;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(32, 201, 151, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-right: 1rem;
+  color: var(--health-teal);
+  font-size: 1.1rem;
 }
 
 .system-info {
-    flex: 1;
+  flex: 1;
 }
 
 .system-name {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
 }
 
 .system-type {
-    font-size: 0.8rem;
-    color: var(--health-secondary);
-    margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--health-secondary);
+  margin-bottom: 0.5rem;
 }
 
 .system-status {
-    margin-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
 .system-last-synced {
-    font-size: 0.75rem;
-    color: var(--health-secondary);
-    margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--health-secondary);
+  margin-bottom: 0.5rem;
 }
 
 /* Visualization Tools Cards */
 .visualization-tool-card {
-    background-color: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: var(--health-card-shadow);
-    padding: 20px;
-    border-radius: 10px;
-    height: 100%;
-    transition: all 0.3s;
-    text-align: center;
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--health-card-shadow);
+  padding: 20px;
+  border-radius: 10px;
+  height: 100%;
+  transition: all 0.3s;
+  text-align: center;
 }
 
 .visualization-tool-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.1);
 }
 
 .visualization-tool-card h5 {
-    color: var(--health-primary);
-    margin-bottom: 15px;
-    font-weight: 600;
+  color: var(--health-primary);
+  margin-bottom: 15px;
+  font-weight: 600;
 }
 
 .visualization-tool-card p {
-    color: #202124;
-    margin-bottom: 20px;
-    font-size: 0.9rem;
+  color: #202124;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
 }
 
 .visualization-tools-card {
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: var(--health-card-shadow);
-    border-radius: 10px;
-    background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--health-card-shadow);
+  border-radius: 10px;
+  background-color: #ffffff;
 }
 
 .visualization-tools-card .card-header {
-    background-color: rgba(26, 115, 232, 0.03);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    color: var(--health-primary);
-    font-weight: 600;
+  background-color: rgba(26, 115, 232, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--health-primary);
+  font-weight: 600;
 }
 
 /* Additional dashboard fixes */
 .dashboard-welcome-header {
-    background-color: #ffffff;
+  background-color: #ffffff;
 }
 
 .welcome-title {
-    color: #202124;
+  color: #202124;
 }
 
 .welcome-subtitle {
-    color: #5f6368;
+  color: #5f6368;
 }
 
 .health-metrics-list {
-    background-color: #ffffff;
+  background-color: #ffffff;
 }
 
 .missing-data-message {
-    color: #5f6368;
+  color: #5f6368;
 }
 
 .missing-data-icon {
-    color: var(--health-primary);
+  color: var(--health-primary);
 }
 
 .metric-value {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--health-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--health-primary);
 }
 
 .metric-label {
-    font-size: 0.9rem;
-    color: #5f6368;
-    margin-top: 5px;
+  font-size: 0.9rem;
+  color: #5f6368;
+  margin-top: 5px;
 }
 
 .metric-unit {
-    font-size: 0.75rem;
-    color: #9aa0a6;
-    margin-left: 5px;
+  font-size: 0.75rem;
+  color: #9aa0a6;
+  margin-left: 5px;
 }
 
 .metric-timestamp {
-    font-size: 0.75rem;
-    color: #9aa0a6;
-    margin-top: 5px;
+  font-size: 0.75rem;
+  color: #9aa0a6;
+  margin-top: 5px;
 }
 
 .risk-score-container {
-    background-color: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 .risk-label, .risk-explanation {
-    color: #5f6368;
+  color: #5f6368;
 }
 
 .key-risk-factors {
-    color: #202124;
+  color: #202124;
 }
 
 .risk-factors-list {
-    color: #202124;
+  color: #202124;
 }
 
 .empty-alerts-message, .empty-devices-message {
-    color: #5f6368;
+  color: #5f6368;
 }
 
 /* Patient card styling */
 .patient-card {
-    background-color: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: var(--health-card-shadow);
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: var(--health-card-shadow);
 }
 
 /* Devices section fixes */
 .card.bg-dark {
-    background-color: #ffffff !important;
-    border-color: rgba(0, 0, 0, 0.08);
-    color: #202124;
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #202124;
 }
 
 .card.bg-dark .card-body {
-    color: #202124;
+  color: #202124;
 }
 
 .card-footer.bg-dark {
-    background-color: rgba(26, 115, 232, 0.03) !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    color: #202124;
+  background-color: rgba(26, 115, 232, 0.03) !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: #202124;
 }
 
 .device-info .device-detail .label {
-    color: #5f6368;
+  color: #5f6368;
 }
 
 .device-info .device-detail .value {
-    color: #202124;
+  color: #202124;
 }
 
 .text-center.py-5.bg-dark {
-    background-color: #ffffff !important;
-    color: #202124;
+  background-color: #ffffff !important;
+  color: #202124;
 }
 
 .text-center.py-5.bg-dark h4 {
-    color: var(--health-primary);
+  color: var(--health-primary);
 }
 
 .text-center.py-5.bg-dark .text-muted {
-    color: #5f6368 !important;
+  color: #5f6368 !important;
 }
 
 /* Risk score presentation fixes */
 .risk-score-container .card-header {
-    background-color: rgba(26, 115, 232, 0.03);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    color: var(--health-primary);
+  background-color: rgba(26, 115, 232, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--health-primary);
 }
 
 .risk-score-container .card-body {
-    background-color: #ffffff;
-    color: #202124;
+  background-color: #ffffff;
+  color: #202124;
 }
 
 .risk-score {
-    color: var(--health-primary);
+  color: var(--health-primary);
 }
 
 .risk-level-indicator {
-    background-color: rgba(26, 115, 232, 0.1);
+  background-color: rgba(26, 115, 232, 0.1);
 }
 
 .risk-level-indicator .progress-bar {
-    background-color: var(--health-primary);
+  background-color: var(--health-primary);
 }
 
 .risk-factors-list li {
-    color: #202124;
+  color: #202124;
 }
 
 /* Device pairing guide fixes */
 .card-header.bg-info {
-    background-color: var(--health-primary) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: var(--health-primary) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .device-guide-list li {
-    color: #202124;
-    margin-bottom: 10px;
+  color: #202124;
+  margin-bottom: 10px;
 }
 
 .supported-devices {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .supported-device-item {
-    background-color: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    padding: 8px 12px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    color: #202124;
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  color: #202124;
 }
 
 .supported-device-item .device-type-icon {
-    margin-right: 8px;
+  margin-right: 8px;
 }

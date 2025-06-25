@@ -44,6 +44,7 @@ mode = "sequential"
 task = "shell.exec"
 args = "python3 -c \"from app import db; db.drop_all(); db.create_all()\""
 
+
 [[ports]]
 localPort = 5000
 externalPort = 80
