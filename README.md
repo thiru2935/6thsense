@@ -25,8 +25,9 @@ Named after the intuition to "sense" health patterns before they become critical
 
 ## 🎥 Demo
 
-![Demo]
-<video src="static/videos/demo.mp4" controls width="700"></video>
+[![Demo](static/videos/demo_gif.gif)](static/videos/demo.mp4)
+
+
 ---
 
 ## 📸 Screenshots
