@@ -1136,7 +1136,7 @@
     border-radius: 50%;
 }
 
-#timeline .timeline-item .timeline-icon svg, #timeline .timeline-item .timeline-icon .fa {
+#timeline .timeline-item .timeline-icon svg, #timeline .timeline-item .timeline-icon .fas {
     position: relative;
     top: 13px;
     left: 14px;
@@ -1702,7 +1702,6 @@
     width: 100%;
     min-height:300px;
     position: relative;
-    margin-top: 50px;
 }
 
 .testimonials-header{

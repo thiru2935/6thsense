@@ -1,3 +1,12 @@
+{
+  "label": "ep-raspy-flower-a41u0xg7.us-east-1.aws.neon.tech",
+  "host": "ep-raspy-flower-a41u0xg7.us-east-1.aws.neon.tech",
+  "user": "neondb_owner",
+  "port": 5432,
+  "ssl": true,
+  "database": "neondb",
+  "password": "npg_8knZlIM4yPAf"
+}
 modules = ["python-3.11", "postgresql-16"]
 
 [nix]
@@ -48,3 +57,12 @@ args = "python3 -c \"from app import db; db.drop_all(); db.create_all()\""
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+
+.venv/
+node_modules/
+*.mp4
+.env
+__pycache__/
+dist/
+build/
