@@ -25,7 +25,7 @@ Named after the intuition to "sense" health patterns before they become critical
 
 ## 🎥 Demo
 
-[![Watch the Demo]]
+![Demo]
 <video src="static/videos/demo.mp4" controls width="700"></video>
 ---
 
@@ -33,9 +33,9 @@ Named after the intuition to "sense" health patterns before they become critical
 
 ### 🏠 Home Page
 ![Home](static/screenshot/1.png)
-(static/screenshot/2.png)
-(static/screenshot/3.png)
-(static/screenshot/4.png)
+![Home](static/screenshot/2.png)
+![Home](static/screenshot/3.png)
+![Home](static/screenshot/4.png)
 
 ### 🏠 Dashboard
 ![Dashboard](static/screenshot/15.png)
@@ -51,9 +51,10 @@ Named after the intuition to "sense" health patterns before they become critical
 
 ### 🔐 Authentication
 ![Register](static/screenshot/12.png)
-(static/screenshot/13.png)
-(static/screenshot/13.png)
+![Register](static/screenshot/13.png)
+![Register](static/screenshot/14.png)
 
+### 🔐 Login
 ![Login](static/screenshot/11.png)
 
 ---

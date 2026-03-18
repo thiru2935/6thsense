@@ -61,7 +61,6 @@ externalPort = 80
 
 .venv/
 node_modules/
-*.mp4
 .env
 __pycache__/
 dist/
